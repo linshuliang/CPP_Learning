@@ -139,27 +139,27 @@ C++标准库中，也有不少利用RAII对资源进行管理的例子。
 
 **智能指针**（如`std::unique_ptr`, `std::shared_ptr`），它们的构造函数以指针为参数，并在适当的时候“智能”地将资源释放。
 
-**std::lock_guard**在构造时上锁，并在析构时解锁，常用于线程安全。
+**std::lock_guard** 在构造时上锁，并在析构时解锁，常用于线程安全。
 
-**STL容器**可以作为安全的内存管理类，虽然它们的作用不止于此。
+**STL容器** 可以作为安全的内存管理类，虽然它们的作用不止于此。
 
 ## 5. 实践中的建议
 
-**Prefer STL Container。**当需要一片连续内存时，尽量使用STL容器，例如std::vector，而不是手动去malloc或new一个动态数组。当性能要求比较高时，使用智能指针。
+**Prefer STL Container** 当需要一片连续内存时，尽量使用STL容器，例如std::vector，而不是手动去malloc或new一个动态数组。当性能要求比较高时，使用智能指针。
 
 ```
 std::unique_ptr<char[]> p(new char[1000000]);
 ```
 
-**避免new和malloc。**尽量在上层业务中使用new和malloc，如果必须使用，利用RAII封装它们。
+**避免new和malloc ** 尽量在上层业务中使用new和malloc，如果必须使用，利用RAII封装它们。
 
-**避免使用裸指针。**考虑使用智能指针。
+**避免使用裸指针** 考虑使用智能指针。
 
 ## 6. 扩展与延伸
 
 ### 6.1 std::vector v.s. std::unique_ptr
 
-对于内存的处理上，std::vector和智能指针的差异在于，std::vector会将内存初始化为0，而智能指针不会对内存进行处理。因此在对性能要求比较高的程序中，考虑使用智能指针，而不是std::vector。在Intel i5处理器上分配10MB内存，使用std::vector和智能指针的性能可以相差1000倍以上。
+对于内存的处理上，std::vector和智能指针的差异在 于，std::vector会将内存初始化为0，而智能指针不会对内存进行处理。因此在对性能要求比较高的程序中，考虑使用智能指针，而不是std::vector。在Intel i5处理器上分配10MB内存，使用std::vector和智能指针的性能可以相差1000倍以上。
 
 ### 6.2 Ownership
 

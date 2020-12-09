@@ -32,7 +32,7 @@ private:
 int main()
 {
     int arr_size = 100;
-    Array<float> arr(arr_size);
+    Array<int> arr(arr_size);
     for (int i = 0; i < arr_size; i++)
     {
         arr.assign(i, std::pow(i, 2));

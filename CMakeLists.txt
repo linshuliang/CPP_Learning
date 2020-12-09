@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.6)
 
-project(RAII_Learn)
+project(CPP_LEARNING)
 
 set (CMAKE_CXX_STANDARD 11)
 
