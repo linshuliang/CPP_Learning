@@ -1,0 +1,1 @@
+add_executable(INHERITANCE_DEMO_1 "inheritance_demo_1.cpp")

@@ -6,6 +6,7 @@ class Array
 public:
     explicit Array(size_t arr_size)
     {
+        this->_arr_size = arr_size;
         _arr_data = new T[arr_size];
     }
 
@@ -27,6 +28,7 @@ public:
 
 private:
     T* _arr_data;
+    size_t _arr_size;
 };
 
 int main()
