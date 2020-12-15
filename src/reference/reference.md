@@ -52,7 +52,7 @@ int main()
 
 
 
-## 函数的参数引用
+### 函数的参数引用
 
 ```c++
 #include <iostream>
@@ -132,6 +132,7 @@ void f3(Person& o)
     //引用方式传递参数
     std::cout << "外部函数 f3 : " << o.id() << std::endl;
 }
+
 int main()
 {
     Person x1(1);
@@ -150,9 +151,55 @@ int main()
 }
 ```
 
-
-
 当函数参数为类对象时，函数首先将参数复制一份副本（调用类的拷贝复制函数），在函数内使用的是副本。
 
 当函数参数为类对象的引用或者指针时，函数内使用的就是类对象本身。
+
+
+
+### 把引用作为返回值
+
+C++ 函数可以返回一个引用。当函数返回一个引用时，实际上返回的是一个指向返回值的隐式指针，这样，函数就可以放在赋值语句的左边。
+
+```c++
+#include <iostream>
+
+double vals[] = { 10.1, 12.6, 33.1, 24.1, 50.0 };
+
+double& setValues(int i)
+{
+    return vals[i];   // 返回第 i 个元素的引用
+}
+
+int main()
+{
+    int arr_size = sizeof(vals) / sizeof(double);
+
+    std::cout << "改变前的值" << std::endl;
+    for (int i = 0; i < arr_size; i++)
+    {
+        std::cout << "vals[" << i << "] = ";
+        std::cout << vals[i] << std::endl;
+    }
+
+    setValues(1) = 20.23; // 改变第 2 个元素
+    setValues(3) = 70.8;  // 改变第 4 个元素
+
+    std::cout << "\n改变后的值" << std::endl;
+    for (int i = 0; i < arr_size; i++)
+    {
+        std::cout << "vals[" << i << "] = ";
+        std::cout << vals[i] << std::endl;
+    }
+    return 0;
+}
+```
+
+当返回一个引用时，要注意被引用的对象不能超出作用域，返回一个对局部变量的引用是不合法的。
+
+
+
+
+
+
 
