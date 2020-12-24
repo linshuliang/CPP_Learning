@@ -43,7 +43,7 @@ TwoDimArray<T>::~TwoDimArray()
 	}
 }
 
-template<typename T>
+template<typename T>  
 void TwoDimArray<T>::assign(int r, int c, T value)
 {
 	if(r < this->_rows && c < this->_cols)

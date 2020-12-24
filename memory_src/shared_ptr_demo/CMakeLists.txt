@@ -1,0 +1,6 @@
+# add_executable(MAKE_SHARED_DEMO "make_shared_demo.cpp")
+# add_executable(CONSTRUCTOR_DEMO "constructor_demo.cpp")
+# add_executable(DESTRUCTOR_DEMO "destructor_demo.cpp")
+add_executable(MOVE_FROM_DEMO "move_from_demo.cpp")
+# add_executable(DE_REFERENCE_DEMO "dereference_demo.cpp")
+add_executable(SWAP_DEMO "swap_demo.cpp")

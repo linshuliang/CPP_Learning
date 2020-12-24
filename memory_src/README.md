@@ -76,7 +76,7 @@ void g()
 
 
 
-## std::shared_ptr
+## 2 std::shared_ptr
 
 c++ 中动态内存的管理是通过`new`和`delete`来完成的，只要保证`new`和`delete`的配对使用，是没有问题的。但是有时候我们会忘记释放内存，甚至有时候我们根本就不知道什么时候释放内存。特别是在多个线程间共享数据时，更难判断内存该何时释放。这种情况下机器就容易产生引用非法内存的指针。
 
@@ -84,52 +84,14 @@ c++ 中动态内存的管理是通过`new`和`delete`来完成的，只要保证
 
 
 
-### std::make_shared
-
-``` c++
-template<typename T>
-shared_ptr<T> make_shared(Args&& ... args);
-```
-
-用于创建一个`shared_ptr`智能指针，这是推荐的安全的初始化方式。
-
-类似于`vector`的成员函数`emplace`，`make_shared`的参数`args`用作类`T`的构造函数的参数，从而创建出一个类`T`对象，并使得智能指针`shared_ptr<T>`指向此对象。
-
-```c++
-/*Demo 1: std::make_shared */
-#include <iostream>
-#include <memory>
-#include <string>
-
-int main()
-{
-  // 指向 int 的智能指针
-  std::shared_ptr<int> foo = std::make_shared<int> (10);
-  
-  // 指向 std::string 的智能指针
-  std::shared_ptr<std::string> bar = std::make_shared<std::string>(6, '2');
-  
-  // 指向 std::pair<int, int> 的智能指针
-  std::shared_ptr<std::pair<int, int>> baz = std::make_shared<std::pair<int, int>> (30, 50);
-  
-  std::cout << "*foo: " << *foo << std::endl;
-  std::cout << "*bar: " << *bar << std::endl;
-  std::cout << "*baz: " << baz->first << "  " << baz->second << std::endl;
-  
-  return 0;
-}
-```
-
-
-
-## shared_ptr 的引用计数
+## 2-1 shared_ptr 的引用计数
 
 每个`shared_ptr`都有与指向对象关联的计数器，通常称其为`引用计数(reference count)`。
 
 下面的操作，会使得计数器递增：
 
-* 拷贝构造
-* 拷贝赋值
+* 拷贝构造 (copy constructor)
+* 拷贝赋值 (copy assignment)
 * 将`shared_ptr`对象作为参数传递给一个函数
 * 将`shared_ptr`对象作为函数的返回值
 
@@ -141,22 +103,16 @@ int main()
 ```c++
 std::shared_ptr<int> r = std::make_shared<int>(50);
 r = q;  // 给 r 赋值
-				// 递增 q 指向的对象的引用计数
-				// 递减 r 原来指向对象的引用计数
-				// 如果 r 原来指向对象的引用计数为0，则自动释放该对象
+		// 递增 q 指向对象的引用计数
+		// 递减 r 原来指向对象的引用计数
+		// 如果 r 原来指向对象的引用计数为0，则自动释放该对象
 ```
 
 **注意：** 只有用一个`shared_ptr`为另一个`shared_ptr`赋值时，才将这两个指针关联起来，直接使用地址值会导致各个`shared_ptr`独立。
 
 
 
-## shared_ptr 的析构函数
-
-`shared_ptr`的析构函数会递减它所指向的对象的引用计数。如果引用计数变为`0`，那么`shared_ptr`的析构函数就会销毁对象，并释放它占用的内存。
-
-
-
-### std::shared_ptr 类的构造函数
+### 2-2 std::shared_ptr 类的构造函数
 
 ```c++
 // default constructor
@@ -185,7 +141,9 @@ shared_ptr(const shared_ptr<U>& x) noexcept;
 // If x is empty, an empty object is constructed (the same as default constructed).
 
 // move constructor
-// The object acquires the content managed by x including its owned pointer, x becomes an empty object.
+// The object acquires the content managed by x including its owned pointer,
+// x 的引用计数是多少， 新的 shared_ptr 的引用计数就是多少，
+// x becomes an empty object (as if default-constructed)
 template<typename U>
 shared_ptr(shared_ptr<U>&& x) noexcept;
 
@@ -194,113 +152,288 @@ template<typename U>
 explicit shared_ptr(const weak_ptr<U>& x);
 // If x is not empty, the object shares ownership of x's assets and increases the use_count by 1.
 // If x is empty, an empty object is constructed (the same as default constructer).
+// If x has expired, a bad_weak_ptr exception is thrown.
 
 // move from unique_ptr
-// The object acquires the content managed by x including its owned pointer, x becomes an empty object.
+// The object acquires the content managed by x including its owned pointer,
+// x becomes an empty object.
 template<typename U, typename D>
 shared_ptr(unique_ptr<U, D>&& x);
+
+// aliasing constructor
+// the object co-owns x's managed object and counts as one additional use of x. 
+// However, the stored value is p, without managing its storage. 
+// 此构造函数生成的 shared_ptr 的类型为： shared_ptr<element_type>
+template<class U>
+shared_ptr(const shared_ptr<U>& x, element_type* p) noexcept;
 ```
 
-
-
-### std::shared_ptr 的成员函数
-
-| 成员函数名        | 作用                                                         |
-| ----------------- | ------------------------------------------------------------ |
-| `~shared_ptr();`  | 析构函数                                                     |
-| `operator=()`     | 赋值                                                         |
-| `operator*()`     | 解引用对象                                                   |
-| `operator->()`    | 解引用对象的成员，Returns a pointer to the object pointed by the *stored pointer* in order to access one of its members. |
-| `operator bool()` | Returns whether the stored pointer is a null pointer. The stored pointer points to the object the shared_ptr object dereferences to, which is generally the same as its *owned pointer*. |
-| `get()`           | 返回指针。Returns the *stored pointer*.                      |
-| `reset()`         | 重置指针。Reset pointer.                                     |
-| `swap()`          | 交换。Exchanges the contents of the `shared_ptr` object with those of *x*, transferring ownership of any managed object between them without destroying or altering the `use_count` of either. |
-| `use_count()`     | 引用计数。Returns the number of `shared_ptr` objects that share ownership over the same pointer. |
-| `unique()`        | 引用计数是否为1。Returns whether the `shared_ptr` object does not share ownership over its pointer with other `shared_ptr` objects (i.e., it is *unique*). |
-
-
-
-### std::shared_ptr::operator=
-
-#### 拷贝赋值函数
+**shared_ptr 构造函数 Demo**
 
 ```c++
-template<class U>
-shared_ptr& operator=(const shared_ptr<U>& x) noexcept;
+// shared_ptr constructor example
+#include <iostream>
+#include <memory>
+
+struct C { int* data; };
+
+void main() 
+{
+	// default constructor
+	// constexpr shared_ptr() noexcept;
+	std::shared_ptr<int> p1;
+
+	// from null pointer
+	// constexpr shared_ptr(nullptr_t) : shared_ptr() {}
+	std::shared_ptr<int> p2(nullptr);
+
+	// from pointer
+	// template<class U>
+	// explict shared_ptr(U* p);
+	std::shared_ptr<int> p3(new int);
+
+	// pointer + deleter
+	// template<class U, class D>
+	// shared_ptr(U* p, D del)
+	std::shared_ptr<int> p4(new int, std::default_delete<int>());
+	
+	// pointer + deleter + allocator
+	// template<class U, class D, class Alloc>
+	// shared_ptr(U* p, D del, Alloc alloc>
+	std::shared_ptr<int> p5(new int, [](int* p) {delete p;}, std::allocator<int>());
+	
+	// copy constructor
+	// template<class U>
+	// shared_ptr(const shared_ptr<U>& x) noexcept;
+	std::shared_ptr<int> p6(p5);
+
+	// move constructor
+	// template<class U>
+	// shared_ptr(shared_ptr<U>&& x) noexcept;
+	std::shared_ptr<int> p7(std::move(p6));
+
+	// template<class U>
+	// shared_ptr(unique_ptr<U>& x);
+	std::shared_ptr<int> p8(std::unique_ptr<int>(new int));
+
+	std::shared_ptr<C> obj(new C);
+	obj->data = new int(10);
+	int* one_int = new int(20);
+
+	// aliasing constructor
+	// template<class U>
+	// shared_ptr(const shared_ptr<U>& x, element_type* p) noexcept;
+	std::shared_ptr<int> p9(obj, one_int);
+
+	std::cout << "use_count:\n";
+	std::cout << "p1: "  << p1.use_count()  << '\n';  // 0
+	std::cout << "p2: "  << p2.use_count()  << '\n';  // 0
+	std::cout << "p3: "  << p3.use_count()  << '\n';  // 1
+	std::cout << "p4: "  << p4.use_count()  << '\n';  // 1
+	std::cout << "p5: "  << p5.use_count()  << '\n';  // 2
+	std::cout << "p6: "  << p6.use_count()  << '\n';  // 2 -> 0
+	std::cout << "p7: "  << p7.use_count()  << '\n';  // 2
+	std::cout << "p8: "  << p8.use_count()  << '\n';  // 1
+	std::cout << "obj: " << obj.use_count() << '\n';  // 2
+	std::cout << "p9: "  << p9.use_count()  << '\n';  // 2
+	std::cout << "*p9: " << *p9             << '\n';  // 20
+	delete p9.get();  // 因为 p9 不管理 one_int 的生存期，所以必须显式删除
+}
 ```
 
-#### 移动赋值函数
+#### 2-2-1 std::make_shared
+
+``` c++
+template<typename T>
+shared_ptr<T> make_shared(Args&& ... args);
+```
+
+用于创建一个`shared_ptr`智能指针，这是推荐的安全的初始化方式。
+
+类似于`vector`的成员函数`emplace`，`make_shared`的参数`args`用作类`T`的构造函数的参数，从而创建出一个类`T`对象，并使得智能指针`shared_ptr<T>`指向此对象。
 
 ```c++
-template<class U>
-shared_ptr& operator=(shared_ptr<U>&& x) noexcept;
+/*Demo 1: std::make_shared */
+#include <iostream>
+#include <memory>
+#include <string>
+
+void main()
+{
+  // 指向 int 的智能指针
+  std::shared_ptr<int> foo = std::make_shared<int> (10);
+  
+  // 指向 std::string 的智能指针
+  std::shared_ptr<std::string> bar = std::make_shared<std::string>(6, '2');
+  
+  // 指向 std::pair<int, int> 的智能指针
+  std::shared_ptr<std::pair<int, int>> baz = std::make_shared<std::pair<int, int>> (30, 50);
+  
+  std::cout << "*foo: " << *foo << std::endl;  // 10
+  std::cout << "*bar: " << *bar << std::endl;  // "222222"
+  std::cout << "*baz: " << baz->first << ", " << baz->second << std::endl;  // 30, 50
+}
 ```
 
-**Demo2  std::shared_ptr::operator=**
+
+
+## 2-3 析构函数 
+
+```c++
+~shared_ptr();
+```
+
+`shared_ptr`的析构函数会递减它所指向的对象的引用计数。如果引用计数变为`0`，那么`shared_ptr`的析构函数就会销毁对象，并释放它占用的内存。
+
+**shared_ptr 析构函数 Demo**
 
 ```c++
 #include <iostream>
 #include <memory>
 
+void main()
+{
+	auto myDeleter = [](int* p)
+	{
+		std::cout << "Call deleter" << std::endl;
+		delete p;
+	};
+
+	{
+		std::shared_ptr<int> var(new int{ 10 }, myDeleter);
+		std::cout << "*var = " << *var << std::endl;
+	} // var 离开作用域，执行析构函数
+
+	std::cout << "Main End" << std::endl;
+}
+```
+
+#### 2-3-1 智能指针与自定义 deleter
+
+默认情况下，`shared_ptr`假定它们指向的是由`new`分配的动态内存。因此当`shared_ptr`被销毁时，它默认对管理的指针进行`delete`操作。
+
+当智能指针管理的资源不是由`new`分配的内存，记住传递给它一个删除器(`deleter`)，。
+
+```c++
+// shared_ptr destructor demo : customized deleter
+#include <iostream>
+#include <memory>
+
+class sample
+{
+public:
+	sample() 
+	{ 
+		std::cout << "Call constructor." << std::endl;
+		data = new int [10]; 
+	}
+    
+	~sample() 
+	{ 
+		std::cout << "Call Destructor." << std::endl;
+	}
+
+	int* data;
+};
+
+// 一般而言，deleter 的返回值类型为void，形参类型为data_type*
+void deleter(sample *sp)
+{
+	std::cout << "Call deleter." << std::endl;
+	delete [] sp->data;
+}
+
 int main()
 {
-	std::shared_ptr<int> foo;
-	std::shared_ptr<int> bar = std::make_shared<int>(10);
-
-	// template<typename U>
-	// shared_ptr& operator=(const shared_ptr<U>& x) noexcept;
-	foo = bar;
-
-	// template<typename U>
-	// shared_ptr& operator=(shared_ptr<U>&& x) noexcept;
-	bar = std::move(std::make_shared<int>(20));
-	
-	std::cout << "*foo: " << *foo << std::endl;
-	std::cout << "*bar: " << *bar << std::endl;
-
+    sample a;
+	std::shared_ptr<sample> sp1(&a);           // Call Destructor to free memory，内存泄漏
+	std::shared_ptr<sample> sp2(&a, deleter);  // Call deleter to free memory，正确释放数组空间
 	return 0;
 }
 ```
 
 
 
-### 解引用
+### 2-4 赋值函数
 
-#### 解引用指针对象
+#### 2-4-1 拷贝赋值函数
+
+```c++
+// The copy assignments adds the object as a shared owner of x's assets, increasing their use_count.
+template<class U>
+shared_ptr& operator=(const shared_ptr<U>& x) noexcept;
+```
+
+#### 2-4-2 移动赋值函数
+
+```c++
+// The move assignments transfer ownership from x to the shared_ptr object without altering the use_count. 
+// x becomes an empty shared_ptr (as if default-constructed).
+template<class U>
+shared_ptr& operator=(shared_ptr<U>&& x) noexcept;
+```
+
+#### 2-4-3 转移控制权
+
+```c++
+// the move assignments from other managed pointer types also transfer ownership
+// and are initialized with set a use_count of 1.
+template<class U, class D>
+shared_ptr& operator=(unique_ptr<U, D>&& x);
+```
+
+**shared_ptr 赋值函数 Demo**
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main() 
+{
+	std::shared_ptr<int> foo;
+	std::shared_ptr<int> bar(new int(10));
+
+	// copy assignment
+	// template<class U>
+	// shared_ptr& operator=(const shared_ptr<U>& x) noexcept;
+	foo = bar; 
+
+	// copy assignment
+	// template<class U>
+	// shared_ptr& operator=(const shared_ptr<U>& x) noexcept;
+	bar = std::make_shared<int>(20);
+	std::cout << "*bar: " << *bar << '\n';
+	std::cout << "bar.use_count(): " << bar.use_count() << '\n';  // 1
+
+	std::unique_ptr<int> up(new int(30));
+
+	// move from other pointer
+	// template<class U>
+	// shared_ptr& operator=(unique_ptr<U>&& x);
+	foo = std::move(up);
+
+	std::cout << "*foo: " << *foo << '\n';
+	std::cout << "foo.use_count(): " << foo.use_count() << std::endl;  // 1
+}
+```
+
+
+
+### 2-5 解引用
+
+#### 2-5-1 解引用指针对象
 
 ```c++
 element_type& operator*() const noexcept;
 ```
 
-**Demo3 std::shared_ptr::operator* **
-
-```c++
-#include <iostream>
-#include <memory>
-
-int main()
-{
-	std::shared_ptr<int> foo(new int);
-	std::shared_ptr<int> bar(new int (10));
-
-	*foo = *bar * 2;
-
-	std::cout << "*foo: " << *foo << std::endl;
-	std::cout << "*bar: " << *bar << std::endl;
-
-	return 0;
-}
-```
-
-
-
-#### 解引用指针对象的成员变量
+#### 2-5-2 解引用指针对象的成员变量
 
 ```c++
 element_type& operator->() const noexcept;
 ```
 
-**Demo4 std::shared_ptr::operator->**
+**shared_ptr 解引用 Demo**
 
 ```c++
 #include <iostream>
@@ -312,36 +445,156 @@ struct cla
 	int b;
 };
 
-int main()
+void main()
 {
-	std::shared_ptr<cla> foo;
+	std::shared_ptr<int> foo1(new int);
+	std::shared_ptr<int> bar1(new int (10));
+	*foo1 = *bar1 * 2;
+	std::cout << "*foo1: " << *foo1 << std::endl;  // 20
+	std::cout << "*bar1: " << *bar1 << std::endl;  // 10
+    
+    std::shared_ptr<cla> foo;
 	std::shared_ptr<cla> bar (new cla);
-
+    
 	// template<typename U>
-	// shared_ptr& operator=(const shared_ptr<U>& );
+	// shared_ptr& operator=(const shared_ptr<U>&);
 	foo = bar;
-
+    
 	foo->a = 10;
 	bar->b = 20;
-
-	if(foo) std::cout << "foo: " << foo->a << " " << foo->b << std::endl;
-	if(bar) std::cout << "bar: " << bar->a << " " << bar->b << std::endl;
-
-	return 0;
+	if(foo) std::cout << "foo: " << foo->a << " " << foo->b << std::endl;  // 10, 20
+	if(bar) std::cout << "bar: " << bar->a << " " << bar->b << std::endl;  // 10, 20
 }
 ```
 
 
 
-### 返回内置指针
+### 2-6 std::shared_ptr 的成员函数
 
-智能指针定义了一个名为`get()`的函数，它返回一个内置指针，指向智能指针管理的对象。`get()`函数的设计原则是：我们向不能使用智能指针的代码传递一个内置指针，例如：
+| 成员函数名        | 作用                                                         |
+| ----------------- | ------------------------------------------------------------ |
+| `swap()`          | 交换。包括数据和引用计数。                                   |
+| `reset()`         | 重置指针。Reset pointer.                                     |
+| `get()`           | 返回存储指针。Returns the *stored pointer*.                  |
+| `use_count()`     | 引用计数。Returns the number of `shared_ptr` objects that share ownership over the same pointer. |
+| `unique()`        | 引用计数是否为1。Returns whether the `shared_ptr` object does not share ownership over its pointer with other `shared_ptr` objects. |
+| `operator bool()` | 是否为空。Returns whether the stored pointer is a null pointer. |
 
 
 
-**Demo5-1 std::shared_ptr::get**
+#### 2-6-1 交换管理对象
 
 ```c++
+// Exchanges the contents of the shared_ptr object with those of x,
+// transferring ownership of any managed object between them without destroying or altering the use count of either.
+void swap(shared_ptr& x) noexcept;
+
+// 伪代码
+template<class T>
+std::shared_ptr<T>::swap(shared_ptr<T>& x) noexcept
+{
+    // 数据替换
+    T temp = *this;
+    *this = *x;
+    *x = temp;
+    
+    // 引用计数替换
+    int temp_count = this.use_count;
+    this.use_count = x.use_count;
+    x.use_cout = temp_count;
+}
+```
+
+**shared_ptr 交换 demo**
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::shared_ptr<int> foo(new int{ 20 });
+	std::shared_ptr<int> foo2 = foo;
+	std::shared_ptr<int> bar(new int{ 10 });
+	foo.swap(bar);
+	std::cout << *foo << ", " << foo.use_count() << std::endl;  // 10, 1
+	std::cout << *bar << ", " << bar.use_count() << std::endl;  // 20, 2
+}
+```
+
+
+
+#### 2-6-2 重置指针
+
+```c++
+void reset() noexcept;
+```
+
+重置指针，使得`shared_ptr` 变为空。
+
+```c++
+template<class U>
+void reset(U* p);
+```
+
+重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
+
+```c++
+// pointer + deleter
+template<class U, class D>
+void reset(U* p, D del);
+```
+
+重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
+
+```c++
+// pointer + deleter + allocator
+template<class U, class D, class Alloc>
+void reset(U* p, D del, Alloc alloc);
+```
+
+重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
+
+**std::shared_ptr 重置 demo**
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::shared_ptr<int> sp;  // empty pointer
+
+	// takes ownership of pointer
+	sp.reset(new int);
+	*sp = 10;
+	std::cout << *sp << std::endl;  // 10
+
+	// deletes managed object, acquires new pointer.
+	sp.reset(new int {20});
+	std::cout << *sp << std::endl;  // 20
+  
+	// deletes managed object
+	sp.reset();
+}
+```
+
+
+
+#### 2-6-3 获取存储指针
+
+```c++
+element_type* get() const noexcept;
+// Returns the stored pointer
+// The stored pointer points to the object the shared_ptr object dereferced to.
+// 也就是说 *sp = *sp.get();
+// 注意： shared_ptr 的存储指针和管理的对象不一定相同，例如 alias constructor 创建的 shared_ptr。
+```
+
+智能指针提供`get()`成员函数的出发点：我们向不能使用智能指针的代码传递一个内置指针。
+
+```c++
+//  std::shared_ptr::get() demo 
 #include <iostream>
 #include <memory>
 using namespace std;
@@ -359,6 +612,8 @@ int main()
 }
 ```
 
+##### shared_ptr::get 错误用法
+
 `get()`返回的指针所对应的内存空间，会在最后一个智能指针被销毁时所释放。
 
 `std::shared_ptr::get`函数有多个陷阱需要规避，包括：
@@ -366,15 +621,12 @@ int main()
 * 不使用`get()`的返回值来初始化或`reset()`另一个智能指针；
 * 不能 delete `get()`返回的指针；
 
-
-
-**Demo5-2 std::shared_ptr::get** 错误用例1
-
 ```c++
+// std::shared_ptr::get 错误用例 -- 不使用std::shared_ptr::get() 的返回值来初始化或reset()另一个智能指针。
 #include <memory>
 #include <iostream>
 
-int main()
+void main()
 {
 	std::shared_ptr<int> p = std::make_shared<int>(10);
 	std::cout << *p << std::endl;  // 10
@@ -382,22 +634,19 @@ int main()
 	int *pg = p.get();
 	{
 		std::shared_ptr<int> q(pg);
-	} // q 被销毁
-
-	std::cout << *p << std::endl;   // pointer being freed was not allocated
-									                // 报错， p 所指向的内存资源已被释放
-
-	return 0;
+	} // q 被销毁, pg 内存空间被释放
+    
+	std::cout << *p << std::endl;  // 报错， p 所指向的内存资源已被释放
 } 
+
+/*
+两个智能指针 p 和 q，它们指向相同的内存空间，但是由于它们是相互独立创建的，所以各自的引用计数都是1。
+当 q 离开作用域时，调用相应的析构函数，q 所对应的内存资源被释放，从而 p 变成了一个空悬指针(dangling pointer)。
+*/
 ```
 
-Demo 5-2 中创建了两个智能指针`p`和 `q`，它们指向相同的内存空间，但是由于它们是相互独立创建的，所以各自的引用计数都是1。当`q`离开作用域时，调用相应的析构函数，`q`所对应的内存资源被释放，从而`p`变成了一个空悬指针(`dangling pointer`)。
-
-
-
-**Demo 5-3 std::shared_ptr::get** 错误用例2
-
 ```c++
+// std::shared_ptr::get 错误用例 -- 不能 `delete` 由`std::shared_ptr::get` 返回的指针。
 #include <memory>
 #include <iostream>
 
@@ -416,11 +665,9 @@ int main()
 
 ```
 
-不能 `delete` 由`std::shared_ptr::get` 返回的指针。
 
 
-
-### 判断智能指针是否为空
+#### 2-6-4 判断智能指针是否为空
 
 ```c++
 explicit operator bool() const noexcept;
@@ -431,15 +678,12 @@ Return value:
 * `false` if the shared_ptr is a null pointer;
 * `true` otherwise.
 
-
-
-**Demo 5 std::shared_ptr::operator bool**
-
 ```c++
+// Demo : std::shared_ptr::operator bool
 #include <iostream>
 #include <memory>
 
-int main ()
+void main ()
 {
   std::shared_ptr<int> foo;
   std::shared_ptr<int> bar (new int(34));
@@ -449,98 +693,25 @@ int main ()
 
   if (bar) std::cout << "bar points to " << *bar << '\n';
   else std::cout << "bar is null\n";
-
-  return 0;
 }
 ```
 
 
 
-### 重置指针
-
-```c++
-void reset() noexcept;
-```
-
-重置指针，使得`shared_ptr` 变为空。
-
-
-
-```c++
-template<class U>
-void reset(U* p);
-```
-
-重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
-
-
-
-```c++
-// pointer + deleter
-template<class U, class D>
-void reset(U* p, D del);
-```
-
-重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
-
-
-
-```c++
-// pointer + deleter + allocator
-template<class U, class D, class Alloc>
-void reset(U* p, D del, Alloc alloc);
-```
-
-重置指针，使得`shared_ptr`指向`p`，`use_count`变为1。
-
-
-
-**Demo5 std::shared_ptr::reset**
-
-```c++
-#include <iostream>
-#include <memory>
-
-int main()
-{
-	std::shared_ptr<int> sp;  // empty pointer
-
-	// takes ownership of pointer
-	sp.reset(new int);
-	*sp = 10;
-	std::cout << *sp << std::endl;
-
-	// deletes managed object, acquires new pointer.
-	sp.reset(new int);
-	*sp = 20;
-	std::cout << *sp << std::endl;
-  
-	// deletes managed object
-	sp.reset();
-  
-	return 0;
-}
-```
-
-
-
-### 引用计数
+#### 2-6-5 引用计数是否为1
 
 ```c++
 bool unique() const noexcept;
 ```
 
-引用计数是否为1。
-
-
-
-**Demo6 std::shared_ptr::unique**
+`shared_ptr.use_count()  == 1` 等同于 `shared_ptr.unique()`，但`std::shared_ptr::unique()`的效率更高。 
 
 ```c++
+// Demo: std::shared_ptr::unique
 #include <iostream>
 #include <memory>
 
-int main ()
+void main ()
 {
   std::shared_ptr<int> foo;
   std::shared_ptr<int> bar (new int);
@@ -553,51 +724,6 @@ int main ()
 
   bar = nullptr;
   std::cout << "3: " << foo.unique() << '\n';  // true
-
-  return 0;
-}
-```
-
-
-
-## 智能指针与自定义 deleter
-
-默认情况下，`shared_ptr`假定它们指向的是由`new`分配的动态内存。因此当`shared_ptr`被销毁时，它默认地对它管理的指针进行`delete`操作。
-
-当智能指针管理的资源不是由`new`分配的内存，记住传递给它一个删除器(`deleter`)。
-
-```c++
-#include <iostream>
-#include <memory>
-
-class sample
-{
-public:
-	sample() 
-	{ 
-		std::cout << "Call constructor." << std::endl;
-		data = new int [10]; 
-	}
-	~sample() 
-	{ 
-		std::cout << "Call Destructor." << std::endl;
-	}
-
-	int* data;
-};
-
-void deleter(sample *sp)
-{
-	std::cout << "Call deleter." << std::endl;
-	delete [] sp->data;
-}
-
-int main()
-{
-  sample a;
-	std::shared_ptr<sample> sp1(&a);           // Call Destructor to free memory，内存泄漏
-	std::shared_ptr<sample> sp2(&a, deleter);  // Call deleter to free memory，完好释放数组空间
-	return 0;
 }
 ```
 
