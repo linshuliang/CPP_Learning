@@ -84,6 +84,27 @@ c++ 中动态内存的管理是通过`new`和`delete`来完成的，只要保证
 
 
 
+**std::shared_ptr 的部分代码**
+
+```c++
+template <class _Ty>
+class _Ptr_base { // base class for shared_ptr and weak_ptr
+public:
+    _Ptr_base(const _Ptr_base&) = delete;  // 阻止拷贝
+    _Ptr_base& operator=(const _Ptr_base&) = delete;  // 阻止赋值
+
+private:
+    element_type* _Ptr{nullptr};     // 存储指针（stored pointer）
+    _Ref_count_base* _Rep{nullptr};  // 引用计数管理类
+
+    friend shared_ptr<_Ty>;
+};
+```
+
+
+
+
+
 ## 2-1 shared_ptr 的引用计数
 
 每个`shared_ptr`都有与指向对象关联的计数器，通常称其为`引用计数(reference count)`。
@@ -312,7 +333,7 @@ void main()
 
 默认情况下，`shared_ptr`假定它们指向的是由`new`分配的动态内存。因此当`shared_ptr`被销毁时，它默认对管理的指针进行`delete`操作。
 
-当智能指针管理的资源不是由`new`分配的内存，记住传递给它一个删除器(`deleter`)，。
+当智能指针管理的资源不是由`new`分配的内存（比如类调用构造函数），记住传递给它一个删除器(`deleter`)，。
 
 ```c++
 // shared_ptr destructor demo : customized deleter
@@ -336,7 +357,7 @@ public:
 	int* data;
 };
 
-// 一般而言，deleter 的返回值类型为void，形参类型为data_type*
+// 一般而言，deleter的返回值类型为void，形参类型为data_type*
 void deleter(sample *sp)
 {
 	std::cout << "Call deleter." << std::endl;
@@ -604,11 +625,10 @@ void useShared_ptr(int *p)
     cout<< *p <<endl;
 }
 
-int main()
+void main()
 {
     shared_ptr<int> p1 = make_shared<int>(32);
     useShared_ptr(p1.get());
-    return 0;
 }
 ```
 
@@ -637,7 +657,7 @@ void main()
 	} // q 被销毁, pg 内存空间被释放
     
 	std::cout << *p << std::endl;  // 报错， p 所指向的内存资源已被释放
-} 
+}
 
 /*
 两个智能指针 p 和 q，它们指向相同的内存空间，但是由于它们是相互独立创建的，所以各自的引用计数都是1。
@@ -814,12 +834,12 @@ weak_ptr<U>& operator=(const shared_ptr<U>& x) noexcept;
 
 ### 成员函数
 
-| 成员函数                                                    | 作用                                                         |
-| ----------------------------------------------------------- | ------------------------------------------------------------ |
-| `template<typename U> shared_ptr<U> lock() const noexcept;` | 由于`weak_ptr`所指向的对象有可能不存在，因此不能直接使用`weak_ptr`访问对象，而必须调用`lock()`成员函数。如果`weak_ptr`所指向的对象非空，且相应的`shared_ptr`的引用计数非0，则返回此`shared_ptr`，否则返回一个空的`shared_ptr`。 |
-| `long int use_count() noexcept;`                            | 与此`weak_ptr`指向相同对象的`shared_ptr`的引用计数。         |
-| `bool expired() const noexcept;`                            | 作用等同于判断`use_count() == 0`，但效率更高。当`weak_ptr`为空，或者所绑定的`shared_ptr`已经释放，则返回true。 |
-| `void reset() noexcept;`                                    | 重置指针，变为空。                                           |
+| 成员函数      | 作用                                                         |
+| ------------- | ------------------------------------------------------------ |
+| `lock() `     | 由于`weak_ptr`所指向的对象有可能不存在，因此不能直接使用`weak_ptr`访问对象，而必须调用`lock()`成员函数。如果`weak_ptr`所指向的对象非空，且相应的`shared_ptr`的引用计数非0，则返回此`shared_ptr`，否则返回一个空的`shared_ptr`。 |
+| `use_count()` | 与此`weak_ptr`指向相同对象的`shared_ptr`的引用计数。         |
+| `expired()`   | 作用等同于判断`use_count() == 0`，但效率更高。当`weak_ptr`为空，或者所绑定的`shared_ptr`已经释放，则返回`true`。 |
+| `reset();`    | 重置指针，变为空。                                           |
 
 
 
@@ -831,30 +851,27 @@ weak_ptr<U>& operator=(const shared_ptr<U>& x) noexcept;
 #include <iostream>
 #include <memory>
 
-int main()
+template<class T>
+void acess_weak_ptr(const std::weak_ptr<T>& wp)
 {
-	std::shared_ptr<int> sp1, sp2;
-	std::weak_ptr<int> wp;
-
-	if(!wp.lock())
-		std::cout << "The weak_ptr is empty or expired." << std::endl;  // The weak_ptr is empty or expired.
-	else
-	{
-		sp2 = wp.lock();
-		std::cout << "wp: " << *sp2 << std::endl;
-	}
-
-	sp1 = std::make_shared<int>(10);
-	wp = sp1;
-	if(!wp.lock())
+	if (!wp.lock())
 		std::cout << "The weak_ptr is empty or expired." << std::endl;
 	else
 	{
-		sp2 = wp.lock();
-		std::cout << "wp: " << *sp2 << std::endl;  // wp: 10
-	}		
+		std::shared_ptr<T> sp = wp.lock();
+		std::cout << "contained value : " << *sp << std::endl;
+	}
+}
 
-	return 0;
+void main()
+{
+	std::shared_ptr<int> sp1, sp2;
+	std::weak_ptr<int> wp;
+	acess_weak_ptr<int>(wp);
+
+	sp1 = std::make_shared<int>(10);
+	wp = sp1;
+	acess_weak_ptr<int>(wp);
 }
 ```
 

@@ -1,0 +1,5 @@
+add_executable(SIZE_DEMO "size_demo.cpp")
+add_executable(MAX_SIZE_DEMO "max_size_demo.cpp")
+add_executable(RESIZE_DEMO "resize_demo.cpp")
+add_executable(CAPACITY_DEMO "capacity_demo.cpp")
+add_executable(RESERVE_DEMO "reserve_demo.cpp")
