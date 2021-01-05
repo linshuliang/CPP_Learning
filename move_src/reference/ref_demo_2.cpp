@@ -3,15 +3,13 @@
 void swapRef(int& x, int& y);
 void swapPtr(int* x, int* y);
 
-int main()
+void main()
 {
     int i = 12;
     int j = 25;
 
     swapRef(i, j);
     swapPtr(&i, &j);
-
-    return 0;
 }
 
 void swapRef(int& x, int& y)

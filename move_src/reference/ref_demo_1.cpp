@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 using namespace std;
 
-int main()
+void main()
 {
     int a;
     int& b = a;    // 引用型变量是被引用变量的“别名”
@@ -16,6 +16,4 @@ int main()
     // int x1;
     // int &y1;    // 错误: 引用时必须初始化
     // y1 = x1;
-
-    return 0;
 }

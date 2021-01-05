@@ -1,5 +1,4 @@
 #include <iostream>
-
 using namespace std;
 
 // 基类
@@ -15,7 +14,7 @@ protected:
     int height;
 };
 
-// 派生类
+// 派生类 
 class Rectangle : public Shape
 {
 public:
@@ -25,11 +24,10 @@ public:
     }
 };
 
-int main()
+void main()
 {
     Rectangle Rect;
     Rect.setWidth(5);
     Rect.setHeight(7);
     cout << "Total area: " << Rect.getArea() << endl;
-    return 0;
 }

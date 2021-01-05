@@ -53,6 +53,8 @@ void resize(size_type n);
 void resize(size_type n, const value_type& val);
 ```
 
+Change **size**.
+
 Resizes the container so that it contains *n* elements.
 
 If *n* is smaller than the current container `size`, the content is reduced to its first *n* elements, removing those beyond (and destroying them).
@@ -69,7 +71,7 @@ Notice that this function changes the actual content of the container by inserti
 void reserve(size_type n);
 ```
 
-Requests a change in capacity.
+Requests a change in **capacity**.
 
 If `n` is greater than the current vector capacity, the function causes the container to reallocate its storage increasing its capacity to `n`.
 
@@ -79,11 +81,45 @@ In all other cases, this function call does not cause a reallocation and the vec
 
 
 
+```c++
+void shrink_to_fit();
+```
+
+**Shrink to fit**
+
+Requests the container to reduce its capacity to fit its size.  要求vector减小 capacity 以刚好和 size 一致。 
+
+The request is non-binding, and the container implementation is free to optimize otherwise leave the vector with a capacity greater than its size.
+
+This may cause a reallocation, but has no effect on the vector size and cannot alter its elements.
 
 
 
+## 数据访问
+
+```c++
+value_type* data() noexcept;
+// Return value
+// A pointer to the first element in the array used internally by the vector.
+
+const value_type* data() const noexcept;
+// if the vector object is const-qualified, the function returns a pointer to const value_type,
+// otherwise, it returns a pointer to value_type.
+```
+
+Access data.
+
+Returns a direct pointer to the memory array used internally by the vector to store its owned elements.
+
+Because elements in the vector are guaranteed to be stored in contiguous storage locations in the same order as represented by the vector, the pointer retrived can be offset 
 
 
+
+## 数据修改
+
+```c++
+assign
+```
 
 
 

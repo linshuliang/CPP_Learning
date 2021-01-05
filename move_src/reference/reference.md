@@ -30,7 +30,7 @@
 #include <iostream>
 using namespace std;
 
-int main()
+void main()
 {
     int a;
     int& b = a;    // 引用型变量是被引用变量的“别名”
@@ -40,13 +40,11 @@ int main()
     cout << &a << endl;  // 变量的地址相同
     cout << &b << endl;  // 变量的地址相同
 
-    // int x[] = {12,15,20} ;
+    // int x[] = {12,15,20};
     // int &y = x; // 错误: 数组、指针不能被引用
     // int x1;
     // int &y1;    // 错误: 引用时必须初始化
     // y1 = x1;
-
-    return 0;
 }
 ```
 
@@ -59,12 +57,12 @@ int main()
 
 void swapRef(int& x, int& y);
 
-int main()
+void main()
 {
     int i = 12;
     int j = 25;
     swapRef(i, j);
-    return 0;
+    std::cout << i << ", " << j << std::endl;  // 25, 12
 }
 
 void swapRef(int& x, int& y)
@@ -91,6 +89,8 @@ private:
     int who;
 
 public:
+    Person() = default;
+
     // 构造函数
     Person(int n) 
     {
@@ -98,15 +98,24 @@ public:
         std::cout << "构造函数 : " << who << std::endl;
     }
 
-    ~Person() 
+    ~Person()
     {
         std::cout << "析构函数 : " << who << std::endl;
     }
 
-    Person(const Person& p)
+    // 拷贝构造函数，禁止隐式的类型转换
+    // explict 构造函数不是转换构造函数，不被复制初始化考虑
+    explicit Person(const Person& p)
     {
         who = p.who;
-        std::cout << "拷贝构造函数 : " << who << std::endl;
+        std::cout << "const 拷贝构造函数 : " << who << std::endl;
+    }
+
+    Person& operator=(const Person& p)
+    {
+        who = p.who;
+        std::cout << "拷贝赋值函数 : " << who << std::endl;
+        return *this;
     }
 
     int id() 
@@ -117,26 +126,26 @@ public:
 
 void f1(Person o) 
 {    
-    //普通变量方式传递参数
+    // 普通变量方式传递参数
     std::cout << "外部函数 f1 : " << o.id() << std::endl;
 }
 
 void f2(Person* o) 
 {    
-    //指针方式传递参数
+    // 指针方式传递参数
     std::cout << "外部函数 f2 : " << o->id() << std::endl;
 }
 
 void f3(Person& o) 
 {    
-    //引用方式传递参数
+    // 引用方式传递参数
     std::cout << "外部函数 f3 : " << o.id() << std::endl;
 }
 
-int main()
+void main()
 {
     Person x1(1);
-    f1(x1);
+    // f1(x1);  // explict 构造函数不是转换构造函数，不被复制初始化考虑
     std::cout << "-------" << std::endl;
 
     Person x2(2);
@@ -147,8 +156,32 @@ int main()
     f3(x3);
     std::cout << "-------" << std::endl;
 
-    return 0;
+    Person x4;
+    x4 = x3;
+    std::cout << "-------" << std::endl;
+    
+	Person x5(x1);
+    std::cout << "-------" << std::endl;
 }
+
+/*
+构造函数 : 1
+-------
+构造函数 : 2
+外部函数 f2 : 2
+-------
+构造函数 : 3
+外部函数 f3 : 3
+-------
+拷贝赋值函数 : 3
+-------
+const 拷贝构造函数 : 1
+-------
+析构函数 : 3
+析构函数 : 3
+析构函数 : 2
+析构函数 : 1
+*/
 ```
 
 当函数参数为类对象时，函数首先将参数复制一份副本（调用类的拷贝复制函数），在函数内使用的是副本。
@@ -171,7 +204,7 @@ double& setValues(int i)
     return vals[i];   // 返回第 i 个元素的引用
 }
 
-int main()
+void main()
 {
     int arr_size = sizeof(vals) / sizeof(double);
 
@@ -191,13 +224,37 @@ int main()
         std::cout << "vals[" << i << "] = ";
         std::cout << vals[i] << std::endl;
     }
-    return 0;
 }
 ```
 
 当返回一个引用时，要注意被引用的对象不能超出作用域，返回一个对局部变量的引用是不合法的。
 
 
+
+### 引用和指针的区别
+
+C++primer中对象的定义：对象是指一块能存储数据并具有某种类型的内存空间。
+一个对象 a，它有值和地址&a，运行程序时，计算机会为该对象分配存储空间，来存储该对象的值，我们通过该对象的地址，来访问存储空间中的值。
+
+
+
+指针 `p` 也是对象，它同样有地址`&p`和存储的值`p`，只不过`p`存储的数据类型是数据的地址。
+
+ 如果我们要以`p`中存储的数据为地址，来访问对象的值，则要在`p`前加解引用操作符`*`，即`*p`。
+
+
+
+对象有常量（`const`）和变量之分，既然指针本身是对象，那么指针所存储的地址值也有常量和变量之分。指针常量是指，指针这个对象所存储的数据的地址是不可改变的。
+
+
+
+我们可以把引用理解为变量的别名。定义一个引用时，程序把该引用和它的初始值绑定在一起，而不是拷贝它。实际上，引用就是常量指针，它只能绑定到初始化它的对象上。
+
+
+
+**引用的一个优点**:
+
+​	引用一定不为空，因此相对于指针，它不用检查它所指向的对象是否为空，这增加了效率。
 
 
 

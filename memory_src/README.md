@@ -607,7 +607,7 @@ void main()
 ```c++
 element_type* get() const noexcept;
 // Returns the stored pointer
-// The stored pointer points to the object the shared_ptr object dereferced to.
+// The stored pointer points to the object the shared_ptr object dereferenced to.
 // 也就是说 *sp = *sp.get();
 // 注意： shared_ptr 的存储指针和管理的对象不一定相同，例如 alias constructor 创建的 shared_ptr。
 ```
@@ -615,7 +615,7 @@ element_type* get() const noexcept;
 智能指针提供`get()`成员函数的出发点：我们向不能使用智能指针的代码传递一个内置指针。
 
 ```c++
-//  std::shared_ptr::get() demo 
+// std::shared_ptr::get() demo 
 #include <iostream>
 #include <memory>
 using namespace std;
@@ -769,8 +769,6 @@ explicit unique_ptr(pointer p) noexcept;
 
 `weak_ptr`是一种不控制所指向对象生存期的智能指针，它指向一个由`shared_ptr`管理的对象。将一个 `weak_ptr` 绑定到一个 `shared_ptr` 不会改变 `shared_ptr` 的引用计数。一旦最后一个指向对象的 `shared_ptr` 被销毁，对象就会被释放。因此，`weak_ptr` 的名称正是匹配了这种智能指针"弱"共享对象的特点。
 
-
-
 ### 构造函数
 
 ```c++
@@ -854,13 +852,11 @@ weak_ptr<U>& operator=(const shared_ptr<U>& x) noexcept;
 template<class T>
 void acess_weak_ptr(const std::weak_ptr<T>& wp)
 {
-	if (!wp.lock())
+    std::shared_ptr<T> sp = wp.lock();
+	if (!sp)
 		std::cout << "The weak_ptr is empty or expired." << std::endl;
 	else
-	{
-		std::shared_ptr<T> sp = wp.lock();
 		std::cout << "contained value : " << *sp << std::endl;
-	}
 }
 
 void main()
@@ -885,7 +881,7 @@ void main()
 #include <iostream>
 #include <memory>
 
-int main()
+void main()
 {
   std::shared_ptr<int> sp = std::make_shared<int>(10);
   std::weak_ptr<int> wp(sp);
@@ -893,8 +889,6 @@ int main()
 
   wp.reset();
   std::cout << "wp " << (wp.expired() ? "is" : "is not") << " expired." << std::endl;
-
-  return 0;
 }
 ```
 
