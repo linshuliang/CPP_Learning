@@ -103,8 +103,6 @@ private:
 
 
 
-
-
 ## 2-1 shared_ptr 的引用计数
 
 每个`shared_ptr`都有与指向对象关联的计数器，通常称其为`引用计数(reference count)`。
@@ -113,7 +111,7 @@ private:
 
 * 拷贝构造 (copy constructor)
 * 拷贝赋值 (copy assignment)
-* 将`shared_ptr`对象作为参数传递给一个函数
+* 将`shared_ptr 
 * 将`shared_ptr`对象作为函数的返回值
 
 下面的操作，会使得计数器递减：
@@ -343,33 +341,32 @@ void main()
 class sample
 {
 public:
-	sample() 
-	{ 
+	sample()
+	{
 		std::cout << "Call constructor." << std::endl;
-		data = new int [10]; 
-	}
-    
-	~sample() 
-	{ 
-		std::cout << "Call Destructor." << std::endl;
+		data = new int[10];
 	}
 
+	~sample()
+	{
+		std::cout << "Call Destructor." << std::endl;
+	}
+    
+private:
 	int* data;
 };
 
 // 一般而言，deleter的返回值类型为void，形参类型为data_type*
-void deleter(sample *sp)
+void deleter(sample* sp)
 {
 	std::cout << "Call deleter." << std::endl;
-	delete [] sp->data;
+	delete[] sp->data;
 }
 
-int main()
+void main()
 {
-    sample a;
-	std::shared_ptr<sample> sp1(&a);           // Call Destructor to free memory，内存泄漏
-	std::shared_ptr<sample> sp2(&a, deleter);  // Call deleter to free memory，正确释放数组空间
-	return 0;
+	std::shared_ptr<sample> sp1(new sample());           // Call Destructor to free memory，内存泄漏
+	std::shared_ptr<sample> sp2(new sample(), deleter);  // Call deleter to free memory，正确释放数组空间
 }
 ```
 
@@ -749,27 +746,53 @@ void main ()
 
 
 
-## unique_ptr
+## 3 unique_ptr
 
 `unique_ptr` 负责指针的存储，提供有限的垃圾回收的功能。`unique_ptr`独占其指向的对象。
 
-### unique_ptr 的构造函数
+### 3-1 unique_ptr 的构造函数
 
-```c++
+``` c++
 // default constructor
 constexpr unique_ptr() noexcept;
 
 // construct from pointer
 explicit unique_ptr(pointer p) noexcept;
+
+// move constructor （移动构造函数）
+// 当前unique_ptr获取x管理的内容，x 的引用计数变为0，当前unique_ptr的引用计数变为1。
+unique_ptr(unique_ptr&& x) noexcept;
+
+// copy constructor (禁止拷贝)
+unique_ptr(const unique_ptr&) = delete;
 ```
 
 
 
-## weak_ptr
+### 3-2 unique_ptr 的赋值函数
+
+```c++
+// 
+unique_ptr& operator=(unique_ptr&& x) noexcept;
+
+
+```
+
+
+
+
+
+
+
+
+
+## 4 weak_ptr
 
 `weak_ptr`是一种不控制所指向对象生存期的智能指针，它指向一个由`shared_ptr`管理的对象。将一个 `weak_ptr` 绑定到一个 `shared_ptr` 不会改变 `shared_ptr` 的引用计数。一旦最后一个指向对象的 `shared_ptr` 被销毁，对象就会被释放。因此，`weak_ptr` 的名称正是匹配了这种智能指针"弱"共享对象的特点。
 
-### 构造函数
+
+
+### 4-1 构造函数
 
 ```c++
 // default constructor
@@ -790,7 +813,7 @@ weak_ptr(const shared_ptr<U>& x) noexcept;
 #include <iostream>
 #include <memory> 
 
-int main()
+void main()
 {
 	std::shared_ptr<int> sp = std::make_shared<int>(10);
 
@@ -809,14 +832,12 @@ int main()
 	std::cout << "wp1: " << wp1.use_count() << std::endl;  // 0
 	std::cout << "wp2: " << wp2.use_count() << std::endl;  // 0
 	std::cout << "wp3: " << wp3.use_count() << std::endl;  // 1
-
-	return 0;
 }
 ```
 
 
 
-### 拷贝赋值函数
+### 4-2 拷贝赋值函数
 
 ```c++
 // copy assignment
@@ -830,7 +851,7 @@ weak_ptr<U>& operator=(const shared_ptr<U>& x) noexcept;
 
 
 
-### 成员函数
+### 4-3 成员函数
 
 | 成员函数      | 作用                                                         |
 | ------------- | ------------------------------------------------------------ |
@@ -885,10 +906,122 @@ void main()
 {
   std::shared_ptr<int> sp = std::make_shared<int>(10);
   std::weak_ptr<int> wp(sp);
-  std::cout << "wp " << (wp.expired() ? "is" : "is not") << " expired." << std::endl;
+  std::cout << "wp " << (wp.expired() ? "is" : "is not") << " expired." << std::endl;  // is not expired
 
   wp.reset();
-  std::cout << "wp " << (wp.expired() ? "is" : "is not") << " expired." << std::endl;
+  std::cout << "wp " << (wp.expired() ? "is" : "is not") << " expired." << std::endl;  // is expired
 }
 ```
+
+
+
+### 4-4 weak_ptr 的作用
+
+#### 4-4-1 弱引用 weak_ptr 解决 shared_ptr 的循环引用
+
+引用计数是一种便利的内存管理机制，但它有一个很大的缺点，就是不能管理循环引用的对象。
+
+```c++
+// shared_ptr 循环引用会导致内存泄漏
+#include <iostream>
+#include <memory>
+
+class parent;
+class children;
+
+class parent
+{
+public:
+	~parent() { std::cout << "[Parent] Call Destructor" << std::endl; }
+
+public:
+	std::shared_ptr<children> children_;
+};
+
+class children
+{
+public:
+	~children() { std::cout << "[Children] Call Destructor" << std::endl; }
+
+public:
+	std::shared_ptr<parent> parent_;
+};
+
+void main()
+{
+	std::shared_ptr<parent> p(new parent());
+	std::shared_ptr<children> c(new children());
+
+	p->children_ = c;
+	c->parent_ = p;
+
+	std::cout << "p.use_count() = " << p.use_count() << std::endl;  // 2
+	std::cout << "c.use_count() = " << c.use_count() << std::endl;  // 2
+}  // 程序退出，p 和 c 的引用计数仍为1，不能自动释放，造成内存泄漏
+
+/* 程序输出
+p.use_count() = 2
+c.use_count() = 2
+*/
+```
+
+
+
+`weak_ptr` 是一种不控制所指向对象生存周期的指针，它指向一个由`shared_ptr`所管理的对象。在功能上，`weak_ptr`与普通指针类似。`weak_ptr`与普通指针的重大区别在于：`weak_ptr`能检测到所管理的对象是否已经被释放，从而避免访问非法内存。
+
+```c++
+// 使用 weak_ptr 解决 shared_ptr 无法循环引用的问题
+#include <iostream>
+#include <memory>
+
+class parent;
+class children;
+
+class parent
+{
+public:
+	~parent() { std::cout << "[Parent] Call Destructor" << std::endl; }
+
+public:
+	std::weak_ptr<children> children_;
+};
+
+class children
+{
+public:
+	~children() { std::cout << "[Children] Call Destructor" << std::endl; }
+
+public:
+	std::weak_ptr<parent> parent_;
+};
+
+void main()
+{
+	std::shared_ptr<parent> p(new parent());
+	std::shared_ptr<children> c(new children());
+
+	p->children_ = c;
+	c->parent_ = p;
+
+	std::cout << "p.use_count() = " << p.use_count() << std::endl;  // 1
+	std::cout << "c.use_count() = " << c.use_count() << std::endl;  // 1
+}  // 程序退出，p 和 c 的引用计数变为0，自动释放
+
+/* 程序输出
+p.use_count() = 1
+c.use_count() = 1
+[Children] Call Destructor
+[Parent] Call Destructor
+*/
+```
+
+
+
+
+
+
+
+
+
+
 

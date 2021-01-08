@@ -1,10 +1,6 @@
 # 对象移动
 
-
-
-
-
-## 右值引用 (rvalue reference)
+## 1 右值引用 (rvalue reference)
 
 所谓右值引用，就是必须绑定到右值的引用。我们可以通过 `&&` 来获得右值引用。
 
@@ -49,7 +45,7 @@ void main()
 
 
 
-### 左值持久，右值短暂
+### 1.1 左值持久，右值短暂
 
 * 左值有持久的状态；
 
@@ -68,7 +64,138 @@ void main()
 
 
 
+### 1.2 右值引用可以解决以下场景中的移动语义缺失问题
 
+#### 1.2.1 按值传入参数
+
+按值传参是最符合人类思维的方式。基本的思路是：如果传入参数是为了将资源交给函数接受者，就应该按值传参。
+
+```c++
+// Demo - 按值传入参数
+#include <iostream>
+#include <string>
+
+class Person
+{
+public:
+	Person(std::string name_) : name(name_) { std::cout << "Construct " << name_ << std::endl; }
+
+private:
+	std::string name;
+};
+
+void main()
+{
+	Person a("Alice"); // 先调用构造函数 string(const char*)，再调用 Person(std::string) 构造函数。 
+	std::string b_name = "benz";
+	Person b(b_name); // 调用 Person(std::string) 构造函数
+}
+```
+
+
+
+#### 1.2.2 按值返回
+
+```c++
+// Demo - 按值返回
+#include <string>
+#include <cstring>
+#include <vector>
+#include <iostream>
+
+// 将输入字符串 str 以 delim 为分隔符进行分割
+std::vector<std::string> str_split(const std::string& str, const std::string delim)
+{
+	std::vector<std::string> ret;
+	if (str.empty()) return ret;
+
+	// 将 string 转换为 char*
+	char* str_chars = new char[str.length() + 1];
+	strcpy(str_chars, str.c_str());
+	
+	char* delim_chars = new char[delim.length() + 1];
+	strcpy(delim_chars, delim.c_str());
+
+	// char* strtok(char* str, const char* delimiters);
+	char* p = strtok(str_chars, delim_chars);  // 第一次调用时，参数 str 为一个C字符串，其第一个字符用作扫描令牌的起始位置
+	while (p)
+	{
+		std::string s = p;
+		ret.push_back(s);
+		p = strtok(nullptr, delim_chars);  // 在随后的调用中，该函数需要一个空指针，并使用最后一个标记结束后的位置作为扫描的新起始位置
+	}
+	
+	delete[] str_chars;
+	delete[] delim_chars;
+	return ret;
+}
+
+void main()
+{
+	std::string s = "- This, a sample string.";
+
+	std::vector<std::string> res = str_split(s, " ,.-");
+	for (int i = 0; i < res.size(); ++i)
+	{
+		std::cout << res[i] << std::endl;
+	}
+}
+```
+
+函数 `str_split` 按值返回，`return` 语句又直接返回了一个栈上的左值对象时，标准要求优先调用移动构造函数，如果不符合再调用拷贝构造函数。
+
+也就说，虽然 `ret` 是左值，仍然优先采用移动语义，从而返回类似`std::vector<std::string>` 等容器时就变得轻量。
+
+
+
+### 标准库 std::move 函数
+
+```c++
+template<class T>
+typename remove_reference<T>::type&& move(T&& arg) noexcept;
+```
+
+* 参数
+
+  `arg` : An object 
+
+* 返回值
+
+  An `rvalue reference` that refers to `arg`.
+
+
+
+Many components of standard library implement move semantics, allowing to transfer ownership of the assets and properties of an object without having to copy them when the argument is an `rvalue`.
+
+标准库的许多组件都实现了移动语义，从而允许直接转移对象的资产和属性的所有权，而不必在参数为右值时复制它们。
+
+
+
+**注 ：** `std::move` 其实是 `static_cast<T&&>` 的简单封装。
+
+
+
+```c++
+// move demo cpp
+#include <iostream>
+#include <utility>  // move
+#include <string>
+#include <vector>
+
+void main()
+{
+	std::string bar = "bar-string";
+	std::string&& bar_rvalue_ref = std::move(bar);
+	std::cout << "bar : " << bar << std::endl;  // bar-string
+	std::cout << "right value reference of bar : " << bar_rvalue_ref << std::endl;  // bar-string
+
+	std::vector<std::string> my_vec;
+	my_vec.push_back(bar);
+	my_vec.push_back(bar_rvalue_ref);
+	for (auto it = my_vec.begin(); it != my_vec.end(); it++) std::cout << *it << "  ";
+	std::cout << std::endl;
+}
+```
 
 
 
