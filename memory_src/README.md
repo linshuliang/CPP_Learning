@@ -759,8 +759,8 @@ constexpr unique_ptr() noexcept;
 // construct from pointer
 explicit unique_ptr(pointer p) noexcept;
 
-// move constructor （移动构造函数）
-// 当前unique_ptr获取x管理的内容，x 的引用计数变为0，当前unique_ptr的引用计数变为1。
+// move constructor（移动构造函数）
+// 当前unique_ptr获取x管理的内容，x的引用计数变为0，当前unique_ptr的引用计数变为1。
 unique_ptr(unique_ptr&& x) noexcept;
 
 // copy constructor (禁止拷贝)
@@ -772,17 +772,157 @@ unique_ptr(const unique_ptr&) = delete;
 ### 3-2 unique_ptr 的赋值函数
 
 ```c++
-// 
+// move assignment
 unique_ptr& operator=(unique_ptr&& x) noexcept;
 
+// assign null pointer
+unique_ptr& operator=(nullptr) noexcept;
 
+// copy assignment (禁止拷贝)
+unique_ptr& operator=(const unique_ptr&) = delete;
+```
+
+The object acquires the ownership of `x's` content, including both the stored pointer and the stored `deleter` (along with the responsibility of deleting the object at some point). Any object owned by the `unique_ptr` object before the call is deleted.
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::unique_ptr<int> foo;
+	std::unique_ptr<int> bar;
+
+	// unique_ptr& operator=(unique_ptr&&);
+	foo = std::unique_ptr<int>(new int(100));
+
+	// unique_ptr& operator=(unique_ptr&&);
+	bar = std::move(foo);
+
+	if (foo)
+		std::cout << "foo : " << *foo << std::endl;
+	else
+		std::cout << "foo is empty" << std::endl;  // 赋值后，变为空
+
+	if (bar)
+		std::cout << "bar : " << *bar << std::endl;  // 被赋值的变量，管理相应的指针
+	else
+
+		std::cout << "bar is empty" << std::endl;
+}
 ```
 
 
 
+### 3-3 unique_ptr 的成员函数
+
+| 成员函数名 | 作用                                                         |
+| ---------- | ------------------------------------------------------------ |
+| `get`      | 返回 `unique_ptr` 管理的指针                                 |
+| `reset`    | 重置指针                                                     |
+| `release`  | Release ownership of its stored pointer, by returning its value and replacing it with a null pointer. 释放所管理指针的控制权，并返回管理的指针。 |
+| `swap`     | 交换管理的对象。                                             |
 
 
 
+```c++
+pointer get() const noexcept;
+```
+
+Returns the stored pointer. The stored pointer points to the object managed by the `unique_ptr`, if any, or to `nullptr` if the `unique_ptr` is empty.
+
+Notice that a call to this function does not make `unique_ptr` release ownership of the pointer (i.e., it is still responsible for deleting the managed data at some point). Therefore, the value returned by this function shall not be used to construct a new managed pointer.
+
+**Return Value** : A pointer  to the managed object, or a null pointer.  `pointer` is a member type, defined as the pointer type that points to the type of object managed.
+
+
+
+```c++
+void reset(pointer p = pointer()) noexcept;
+```
+
+Destroys the object currently managed by the `unique_ptr` and takes ownership of `p`.
+
+If `p` is a null `poniter` (such as a default-initialized pointer), the `unique_ptr` becomes empty,  managing no object after the call.
+
+```c++
+// unique_ptr Reset Demo
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::unique_ptr<int> up;  // empty
+	up.reset(new int);        // takes ownership of pointer
+	*up = 5;
+	std::cout << *up << std::endl;
+
+	up.reset(new int);  // deletes managed object, acquire new pointer
+	*up = 10;
+	std::cout << *up << std::endl;
+
+	up.reset();
+}
+```
+
+
+
+```c++
+pointer release() noexcept;
+```
+
+Release ownership of its stored pointer, by returning its value and replacing it with a null pointer.
+
+The call does not destroy the managed object, but the `unique_ptr` object is released from the responsibility of deleting the object. Some other entity must take responsibility for deleting the object at some point.
+
+To force the destruction of the object pointed, either use member function `reset` or perform an `assignment operation` on it.
+
+**Return Value**: A pointer to the object managed by `unique_ptr` before the call. `pointer` is a member type, defined as the pointer type that points to the type of object managed.
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::unique_ptr<int> up(new int);
+	*up = 10;
+
+	int* manual_pointer = up.release();  // 此时 up 将释放控制权，manual_pointer 接管指针的控制权
+	std::cout << "The stored value of manual_pointer : " << *manual_pointer << std::endl;
+	delete manual_pointer;  // new 出来的内存必须显示删除，否则将导致内存泄漏
+}
+```
+
+
+
+```c++
+void swap(unique_ptr& x) noexcept;
+```
+
+Exchanges the contents of the `unique_ptr` object with those of x, transferring ownership of any managed object between them without destroying either. 
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::unique_ptr<int> foo(new int{ 10 });
+	std::unique_ptr<int> bar(new int{ 20 });
+
+	foo.swap(bar);
+
+	std::cout << "foo : " << *foo << std::endl;  // 20
+	std::cout << "bar : " << *bar << std::endl;  // 10
+}
+```
+
+
+
+### 3-4 unique_ptr 的优点
+
+`unique_ptr` 是非常轻量的封装，存储空间几乎等于裸指针，但安全性得到了极大的强化。实际中，需要共享所有权的对象是比较少的，但需要转移所有权是非常常见的情况。 `unique_ptr`  配合移动语义即可轻松解决所有权传递的问题。
 
 
 
@@ -1014,14 +1154,5 @@ c.use_count() = 1
 [Parent] Call Destructor
 */
 ```
-
-
-
-
-
-
-
-
-
 
 

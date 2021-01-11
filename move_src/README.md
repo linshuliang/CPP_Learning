@@ -99,7 +99,7 @@ void main()
 ```c++
 // Demo - 按值返回
 #include <string>
-#include <cstring>
+#include <cstring>  // strcpy, strtok
 #include <vector>
 #include <iostream>
 
@@ -148,6 +148,56 @@ void main()
 
 
 
+#### 1.2.3 std::vector 的增长
+
+当 `vector` 的 `size` 大于 `capacity` 时，在移动语义出现前，需要重新申请一块内存，并把原来的内容一个个复制过去并删除。当有了移动语义后，就只需改为移动就可以了。
+
+
+
+#### 1.2.4 std::unique_ptr 放入容器
+
+由于`std::vector` 等容器支持移动语义，所以将 `unique_ptr` 这种只有移动拷贝函数/移动赋值函数的类对象放入 `std::vector` 等容器中也就称为理所当然的事情。
+
+ 
+
+### 1.3 误解
+
+#### 1.3.1 被移动的值不能再使用
+
+[C.64: A move operation should move and leave its source in a valid state](https://link.zhihu.com/?target=https%3A//isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines%23Rc-move-semantic)
+
+很多人认为：被移动的值会进入一个**非法状态** *(invalid state)*，对应的 **内存不能再访问**。
+
+其实，C++ 标准要求对象遵守移动语义，被移动的对象进入一个**合法但未指定状态** *(valid but unspecified state)*，调用该对象的方法（包括析构函数）不会出现异常，甚至在重新赋值后可以继续使用。
+
+```c++
+#include <iostream>
+#include <memory>
+
+void main()
+{
+	std::unique_ptr<int> p = std::make_unique<int>(1);
+	std::unique_ptr<int> q = std::move(p);
+
+	if (!p) std::cout << "p is now an nullptr" << std::endl;
+
+	p.reset(new int{ 2 });
+	std::cout << "The pointer has been reset to : " << *p << std::endl;
+}
+```
+
+
+
+#### 1.3.2 Don't return std::move(local_var)
+
+C++ 会把 即将离开作用域的 **非引用类型** 的返回值当成 **右值**，对返回的对象进行移动构造。
+
+ 
+
+
+
+
+
 ### 标准库 std::move 函数
 
 ```c++
@@ -173,8 +223,6 @@ Many components of standard library implement move semantics, allowing to transf
 
 **注 ：** `std::move` 其实是 `static_cast<T&&>` 的简单封装。
 
-
-
 ```c++
 // move demo cpp
 #include <iostream>
@@ -190,7 +238,9 @@ void main()
 	std::cout << "right value reference of bar : " << bar_rvalue_ref << std::endl;  // bar-string
 
 	std::vector<std::string> my_vec;
-	my_vec.push_back(bar);
+    // void push_back(const value_type&);
+	my_vec.push_back(bar);      
+    // void push_back(value_type&&);
 	my_vec.push_back(bar_rvalue_ref);
 	for (auto it = my_vec.begin(); it != my_vec.end(); it++) std::cout << *it << "  ";
 	std::cout << std::endl;
@@ -199,17 +249,16 @@ void main()
 
 
 
+
+
+
+
+
+
 ## 参考
 
 [如何评价 C++11 的右值引用（Rvalue reference）特性？](https://www.zhihu.com/question/22111546)
 
-
-
-
-
-
-
-
-
+[深入浅出 C++ 11 右值引用](https://zhuanlan.zhihu.com/p/107445960)
 
 

@@ -1,0 +1,6 @@
+add_executable(ASSIGN_DEMO "assignment_demo.cpp")
+add_executable(RESET_DEMO "reset_demo.cpp")
+add_executable(RELEASE_DEMO "release_demo.cpp")
+add_executable(UNIQUE_PTR_SWAP_DEMO "swap_demo.cpp")
+add_executable(MOVE_VALID_DEMO "move_valid_demo.cpp")
+add_executable(RETURN_LOCAL_DEMO "return_local_demo.cpp")
