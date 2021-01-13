@@ -1,0 +1,2 @@
+add_executable(MOVE_CONSTRUCTOR_DEMO_1 "move_constructor_demo.cpp")
+add_executable(AVOID_DEFAULT_OPERATION_DEMO "avoid_default_operations.cpp")

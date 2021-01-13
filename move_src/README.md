@@ -1,5 +1,125 @@
 # 对象移动
 
+## 0 基础知识
+
+### 0.1 值类型 vs 变量类型
+
+值(value) 和 变量 (variable) 是两个独立的概念：
+
+* 值只有类别(category) 的划分，变量只有类型(type) 的划分；
+* 值不一定拥有身份(identity)，也不一定拥有变量名（例如 表达式中间结果 `i + j + k`）;
+
+
+
+值类别 (value category) 可以分为两种：
+
+* 左值(`lvalue, left value`) 是能被取地址、不能被移动的值；
+* 右值(`rvalue, right value`) 是字面常量/表达式中间结果，可能有变量名，也可能没有；
+
+
+
+**引用类型**是一种变量类型(variable type)。从功能上来说，引用型变量又可以看做是被引用变量的 “别名”，这两个变量只是名称不同，变量的地址是同一个（共用体中的元素也是一样）。
+
+
+
+引用类型变量的初始化，必须遵守以下规则：
+
+- 引用型变量在定义时必须初始化；
+- 被引用的对象必须已经分配了空间，即不能为空，或空指针；
+- 被引用的对象不能是地址，即指针变量、数组变量等不能被引用;
+- 一旦绑定了初始值，就不能重新绑定到其他值上了;
+
+
+
+#### 0.1.1 左值引用 v.s. 右值引用 v.s. const引用
+
+引用类型可以分为：
+
+* 左值引用 (`lvalue reference`) : 用 `&` 符号引用左值；
+* 右值引用(`rvalue reference`) ：用 `&&` 符号引用右值；
+
+* const引用 (`const reference`) ： 同时接受(左值/右值)进行初始化；
+
+```c++
+// const reference demo
+#include <iostream>
+#include <memory>
+#include <utility>
+
+class Data
+{
+public:
+	Data(int i) : data_(i) {}
+	void Print() { std::cout << "[Data::Print] " << data_ << std::endl; }
+	void Display() const { std::cout << "[Data::Display] " << data_ << std::endl; }  // 常量对象只能调用 const 函数
+	// 如果 const 函数不小心修改了类成员或者调用了非 const 函数，编译器会找出这个错误。
+
+private:
+	int data_;
+};
+
+void func(const Data& d)
+{
+	// d.Print();  // ERROR : 对象含有与成员函数不兼容的限定符，对象类型是 const Data
+	d.Display();  // d 是 const 类型变量，它只能调用 const 函数
+	Data a = d;
+	a.Print();
+}
+
+void main()
+{
+	Data d1(10);
+	func(d1);  // d1 是左值，const引用能接受左值初始化
+	func(Data{ 15 });  // Data { 15 } 是右值， const引用能接受右值初始化
+}
+```
+
+
+
+### 0.1.2 引用参数重载优先级
+
+如果函数重载同时接受 右值引用/const 引用 参数，编译器优先重载右引用参数。
+
+```c++
+#include <iostream>
+#include <memory>
+#include <utility>
+
+class Data
+{
+public:
+	Data(int i) : data_(i) {}
+	void Display() const { std::cout << "[Data::Display] " << data_ << std::endl; }  // 常量对象只能调用 const 函数
+
+private:
+	int data_;
+};
+
+void func(const Data& d)
+{
+	std::cout << "Call const-reference function" << std::endl;
+	d.Display();
+}
+
+void func(Data&& d)
+{
+	std::cout << "Call right-reference function" << std::endl;
+	d.Display();
+}
+
+void main()
+{
+	func(Data(10));
+}
+
+/* 终端输出
+Call right-reference function
+[Data::Display] 10
+*/
+```
+
+
+
 ## 1 右值引用 (rvalue reference)
 
 所谓右值引用，就是必须绑定到右值的引用。我们可以通过 `&&` 来获得右值引用。
@@ -15,8 +135,6 @@
 **注1 ：** 左值引用不能将其绑定到（表达式求值过程中创建的临时对象）、字面常量、返回右值的表达式。
 
 **注2 ：** 右值引用有着与左值引用完全相反的特性，我们可以将一个右值引用绑定到（表达式求值过程中创建的临时对象、字面常量、返回右值的表达式）中，但不能将一个右值引用直接绑定到一个左值中。
-
-
 
 ```c++
 // Demo 1 - 左值引用/右值引用的区别
@@ -142,7 +260,7 @@ void main()
 }
 ```
 
-函数 `str_split` 按值返回，`return` 语句又直接返回了一个栈上的左值对象时，标准要求优先调用移动构造函数，如果不符合再调用拷贝构造函数。
+函数 `str_split` 按值返回，`return`语句又直接返回了一个栈上的左值对象时，标准要求优先调用移动构造函数，如果不符合再调用拷贝构造函数。
 
 也就说，虽然 `ret` 是左值，仍然优先采用移动语义，从而返回类似`std::vector<std::string>` 等容器时就变得轻量。
 
@@ -156,7 +274,7 @@ void main()
 
 #### 1.2.4 std::unique_ptr 放入容器
 
-由于`std::vector` 等容器支持移动语义，所以将 `unique_ptr` 这种只有移动拷贝函数/移动赋值函数的类对象放入 `std::vector` 等容器中也就称为理所当然的事情。
+由于`std::vector` 等容器支持移动语义，所以将 `unique_ptr` 这种只有移动拷贝函数/移动赋值函数的类对象放入 `std::vector` 等容器中也就成为理所当然的事情。
 
  
 
@@ -168,7 +286,7 @@ void main()
 
 很多人认为：被移动的值会进入一个**非法状态** *(invalid state)*，对应的 **内存不能再访问**。
 
-其实，C++ 标准要求对象遵守移动语义，被移动的对象进入一个**合法但未指定状态** *(valid but unspecified state)*，调用该对象的方法（包括析构函数）不会出现异常，甚至在重新赋值后可以继续使用。
+其实，C++ 标准要求对象遵守移动语义，被移动的对象进入一个**合法但未指定状态** (valid but unspecified state)，调用该对象的方法（包括析构函数）不会出现异常，甚至在重新赋值后可以继续使用。
 
 ```c++
 #include <iostream>
@@ -190,15 +308,51 @@ void main()
 
 #### 1.3.2 Don't return std::move(local_var)
 
-C++ 会把 即将离开作用域的 **非引用类型** 的返回值当成 **右值**，对返回的对象进行移动构造。
+C++ 会把即将离开作用域的 **非引用类型** 的返回值当成 **右值**，对返回的对象进行移动构造。
 
  
 
+#### 1.3.3 返回右值引用变量时，需使用 std::move 移动转发
+
+无论是 **左值引用** 还是 **右值引用** 的变量（或参数）在初始化后，都是左值：
+
+* 命名的右值引用 `(named rvalue reference)`变量是左值，但变量类型却是右值引用；
+* 在作用域内，左值变量可以通过变量名被取地址，被赋值
 
 
 
+在返回右值引用变量时，需要使用 `std::move()` 显式地移动转发，将变量"还原"为右值。
 
-### 标准库 std::move 函数
+```c++
+#include <iostream>
+#include <memory>
+#include <vector>
+
+std::unique_ptr<int> func1(int num = 10)
+{
+	std::unique_ptr<int> ret = std::make_unique<int>(num);
+	return ret;  // C++会把即将离开作用域的非引用类型的返回值当成右值，进而调用移动构造函数
+}
+
+std::unique_ptr<int> func2(std::unique_ptr<int>&& val)
+{
+	// return val;  // Error, 禁止拷贝
+	return std::move(val);  // 完美转发
+}
+
+void main()
+{
+	auto up = func1(18);
+	std::cout << "Return value of func1: " << *up << std::endl;
+
+	auto up2 = func2(std::move(up));
+	std::cout << "Return value of func2: " << *up2 << std::endl;
+}
+```
+
+
+
+### 1.4 标准库 std::move 函数
 
 ```c++
 template<class T>
@@ -249,9 +403,129 @@ void main()
 
 
 
+## 2 移动语义
+
+在 C++ 11强化了左右值概念后，提出了**移动语义** *(move semantic)* 优化：由于右值对象一般是临时对象，在移动时，对象包含的资源 **不需要先拷贝再删除**，只需要直接**从旧对象移动到新对象**。
+
+同时，要求**被移动的对象** 处于 **合法但未指定状态**（参考1.3.1 被移动的值不能再使用]）：
+
+- （基本要求）能正确析构（不会重复释放已经被移动了的资源，例如 `std::unique_ptr::~unique_ptr()` 检查指针是否需要 `delete`）
+- （一般要求）重新赋值后，和新的对象没有差别（C++ 标准库基于这个假设）
+- （更高要求）恢复为默认值（例如 `std::unique_ptr` 恢复为 `nullptr`）
+
+由于基本类型不包含资源，其移动和拷贝相同：被移动后，保持为原有值。
 
 
 
+### 2.1 避免先拷贝再释放资源
+
+```c++
+#include <iostream>
+
+template<class T>
+class strVec
+{
+public:
+	strVec() : data_(nullptr), size_(0) {};  // 默认构造函数
+	strVec(T* d) : data_(d), size_(0) {};
+	strVec(size_t s) : data_(nullptr), size_(s) {};
+	strVec(T* d, size_t s) : data_(d), size_(s) {};
+	strVec(const strVec& rhs);      // copy constructor
+	strVec(strVec&& rhs) noexcept;  // move constructor
+	~strVec();  // 析构函数
+
+private:
+	T* data_;
+	size_t size_;
+};
+
+template<class T>
+strVec<T>::strVec(const strVec& rhs)
+{
+	std::cout << "Call Copy Constructor" << std::endl;
+	data_ = new T(rhs.size_);
+	strVec<T> &lhs = *this;
+	lhs.size_ = rhs.size_;
+	std::copy_n(rhs.data_, rhs.size_, lhs.data_);  // copy data
+}
+
+template<class T>
+strVec<T>::strVec(strVec&& rhs) noexcept
+{
+	std::cout << "Call Move Constructor" << std::endl;
+	strVec<T>& lhs = *this;
+	lhs.size_ = rhs.size_;
+	lhs.data_ = rhs.data_;  // move data
+	rhs.size_ = 0;          // 恢复为默认情况
+	rhs.data_ = nullptr;    // 恢复为默认情况
+}
+
+template<class T>
+strVec<T>::~strVec()
+{
+	if (data_)  // 判断是否为空
+	{  
+		delete[] data_;
+	}
+}
+
+void main()
+{
+	strVec<char> sv(new char[10], 10);
+	strVec<char> sv2(sv);   // 拷贝构造
+	strVec<char> sv3 = sv;  // 拷贝赋值
+	strVec<char> sv4(std::move(sv));  // 移动构造
+}
+```
+
+- 实参为左值时，拷贝构造，使用 `new[]`/`std::copy_n` 拷贝原对象的所有元素。
+- 实参为右值时，移动构造，把指向原对象内存的指针 `data_`、内存大小 `size_` 拷贝到新对象，并把原对象这两个成员置 `0`
+
+
+
+### 2.2 移动构造函数遵循的基本原则
+
+* 如果没有定义拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数的任何一个，编译器会自动生成移动构造/移动赋值函数；[Rule of Zero](https://en.cppreference.com/w/cpp/language/rule_of_three#Rule_of_zero)
+* 如果 需要定义拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数的任何一个，不要忘了 移动构造/移动赋值 函数，否则对象会不可移动；
+* 尽量使用`=default` 让编译器生成 移动构造/移动赋值 函数，否则 容易写错；
+* 如果 需要自定义移动构造/移动赋值 函数，尽量定义为 `noexcept` 不抛出异常（编译器生成的版本会自动添加），否则 不能高效使用标准库和语言工具；
+
+
+
+#### 2.2.1 If you can avoid defining default operations, do
+
+原因：最简单的，通常也是最稳定最容易维护的。
+
+```c++
+#include <string>
+#include <map>
+
+struct libraryPersonInfo
+{
+public:
+	void assignment(const std::string& name, const std::map<int, int>& req)
+	{
+		this->name_ = name;
+		this->req_ = req;
+	}
+
+private:
+	std::string name_;
+	std::map<int, int> req_;
+};
+
+void main()
+{
+	libraryPersonInfo person;
+	person.assignment("lin", std::map<int, int>(5, 1));
+}
+```
+
+
+
+#### 2.2.4 不抛出异常的移动构造函数和移动赋值运算符必须标记为 noexcept
+
+`noexcept` 是我们承诺一个函数不抛出异常的一种方法。
 
 
 

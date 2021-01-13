@@ -10,6 +10,7 @@ std::unique_ptr<int> func1(int num = 10)
 
 std::unique_ptr<int> func2(std::unique_ptr<int>&& val)
 {
+	// return val;  // Error, 禁止拷贝
 	return std::move(val);  // 完美转发
 }
 

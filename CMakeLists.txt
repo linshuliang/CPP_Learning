@@ -9,6 +9,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 
 # add_subdirectory(application)
 # add_subdirectory(class_src)
-add_subdirectory(memory_src)
+# add_subdirectory(memory_src)
 # add_subdirectory(STL_src)
-# add_subdirectory(move_src)
+add_subdirectory(move_src)
