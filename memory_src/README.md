@@ -111,7 +111,7 @@ private:
 
 * 拷贝构造 (copy constructor)
 * 拷贝赋值 (copy assignment)
-* 将`shared_ptr 
+* 将`shared_ptr `对象作为函数的参数
 * 将`shared_ptr`对象作为函数的返回值
 
 下面的操作，会使得计数器递减：
@@ -619,7 +619,7 @@ using namespace std;
 
 void useShared_ptr(int *p)
 {
-    cout<< *p <<endl;
+    cout<< *p << endl;
 }
 
 void main()
@@ -1155,4 +1155,127 @@ c.use_count() = 1
 */
 ```
 
+
+
+## 5 `std::allocator`
+
+`new` 有一些灵活性上的局限，其中一方面表现在：它将内存分配和对象构造组合在一起。类似的，`delete`将对象析构和内存释放组合在一起。
+
+* 分配单个对象时，通常希望将内存分配和对象初始化组合在一起，在这种情况下，肯定知道对象有什么值；
+
+* 分配一大块内存时，通常计划在这块内存上按需构造对象，在这种情况下，我们可以将内存分配和对象构造分离。也就是先分配一大块内存，在需要时才执行对象创建操作。
+
+  
+
+```c++
+// new 的局限
+#include <iostream>
+#include <string>
+
+void main()
+{
+	int n = 100;
+	std::string* const p = new std::string[n];
+	std::string* q = p;
+
+	std::cout << "Input string (end with 'Enter') : " << std::endl;
+	std::string s;
+	while (std::cin >> s && q != p + n)  // 按下 Ctrl + Z 组合键，再按 Enter, 此时 std::cin >> s 返回 false
+	{
+		*q = s;
+		q++;
+	}
+
+	std::cout << "All string : " << std::endl;
+	const size_t size = q - p;
+	for (int i = 0; i < size; i++)
+	{
+		std::cout << p[i] << std::endl;
+	}
+	
+	delete[] p;
+}
+```
+
+`new` 表达式分配并初始化了`n`个`string`，但是，我们可能不需要 `n` 个 `string`，那么就可能创建了一些永远也用不到的对象。更为糟糕的是，那么确实要用到的对象，我们在初始时立即赋予了新值，使用时又需再次赋值，也就是赋值了两次。
+
+
+
+**Allocators** are classes that define memory models to be used by some parts of the standard library, and most specifically, by `STL containers`.
+
+`std::allocator` is the allocator that all standard containers will use if their last template parameter is not specified, and is the only predefined allocator in the standard library.
+
+
+
+### 5.1 构造函数
+
+```c++
+// default constructor
+allocator() noexcept;
+
+// copy constructor
+allocator(const allocator& alloc) noexcept;
+
+// copy constructor
+template<class U>
+allocator(const allocator<T>& alloc) noexcept;
+```
+
+The `std::allocator` has no data members, it is not required to perform any initialization.
+
+
+
+### 5.2 析构函数
+
+```c++
+~allocator();
+```
+
+Destruct the allocator object.
+
+
+
+### 5.2 成员函数
+
+| 函数名                 | 作用                                                         |
+| ---------------------- | ------------------------------------------------------------ |
+| `allocator<T> a`       | 定义一个名为 `a` 的 `allocator`对象，它可以为类型为`T`的对象分配内存。 |
+| `a.allocate(n)`        | 分配一段原始的，未构造的内存，可保存`n`个类型为`T`的对象。   |
+| `a.deallocate(p, n)`   | 释放从`T*`指针`p`中地址开始的内存，这块内存中保存了`n`个类型为`T`的对象。`p`必须时一个先前由`allocate（）`函数返回的指针，且`n`必须是`p`创建时所要求的大小。在调用`deallocate`之前，用户必须对每个在这块内存中创建的对象调用`destroy`。 |
+| `a.construct(p, args)` | `p` 必须是一个类型为`T`的指针，指向一块原始内存：`args` 被传递给类型为`T`的构造函数，用来在`p`指向的内存中构造一个对象。 |
+| `a.destroy(p)`         | `p` 为`T*` 类型的指针，此算法对 `p` 指向的对象执行析构函数。 |
+
+
+
+```c++
+// 使用 allocate 来优化的内存分配和释放
+#include <iostream>
+#include <memory>
+#include <string>
+
+void main()
+{
+	std::allocator<std::string> alloc;
+	int n = 100;  // 大小
+	std::string* const p = alloc.allocate(n);
+
+	std::string* q = p; // q指向最后构造元素之后的位置
+
+	alloc.construct(q++, 10, 'c');  // *q 为 cccccccccc
+	alloc.construct(q++);           // *q 为空字符串
+	alloc.construct(q++, "hi");     // *q 为 hi
+
+	size_t str_num = q - p;
+	std::cout << "construct string number : " << str_num << std::endl;  // 3
+
+	std::cout << "First contructed string : "    << *p << std::endl;
+	std::cout << "Acess uninitialized memory : " << *q << std::endl;  // 访问未初始化的内存，有可能发生灾难性的后果
+
+	// 由 contruct 创建的对象，必须用 destroy 来析构
+	while (q != p) alloc.destroy(--q);
+
+	// 当所有元素被销毁后，我们可以用 deallocate 来释放内存
+	alloc.deallocate(p, n);
+}
+```
 

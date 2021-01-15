@@ -1,2 +1,6 @@
 add_executable(MOVE_CONSTRUCTOR_DEMO_1 "move_constructor_demo.cpp")
 add_executable(AVOID_DEFAULT_OPERATION_DEMO "avoid_default_operations.cpp")
+add_executable(IMCOMPLETE_DEMO "rule_of_five_bad.cpp")
+add_executable(COPY_MOVE_DEMO "default_copy_move_demo.cpp")
+add_executable(NO_MOVE_DEMO "no_move_constructor_demo.cpp")
+add_executable(NO_COPY_DEMO "no_copy_demo.cpp")

@@ -274,7 +274,7 @@ void main()
 
 #### 1.2.4 std::unique_ptr 放入容器
 
-由于`std::vector` 等容器支持移动语义，所以将 `unique_ptr` 这种只有移动拷贝函数/移动赋值函数的类对象放入 `std::vector` 等容器中也就成为理所当然的事情。
+由于`std::vector` 等容器支持移动语义，所以将 `unique_ptr` 这种只有移动构造函数/移动赋值函数的类对象放入 `std::vector` 等容器中也就成为理所当然的事情。
 
  
 
@@ -486,9 +486,9 @@ void main()
 ### 2.2 移动构造函数遵循的基本原则
 
 * 如果没有定义拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数的任何一个，编译器会自动生成移动构造/移动赋值函数；[Rule of Zero](https://en.cppreference.com/w/cpp/language/rule_of_three#Rule_of_zero)
-* 如果 需要定义拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数的任何一个，不要忘了 移动构造/移动赋值 函数，否则对象会不可移动；
-* 尽量使用`=default` 让编译器生成 移动构造/移动赋值 函数，否则 容易写错；
-* 如果 需要自定义移动构造/移动赋值 函数，尽量定义为 `noexcept` 不抛出异常（编译器生成的版本会自动添加），否则 不能高效使用标准库和语言工具；
+* 如果需要定义拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数的任何一个，不要忘了 移动构造/移动赋值 函数，否则对象会不可移动； `Rule of Five`
+* 尽量使用`=default`让编译器生成默认的 拷贝构造/拷贝赋值，移动构造/移动赋值 函数，否则容易写错；[=default让编译器生成默认函数](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rc-eqdefault)
+* 如果需要自定义 移动构造/移动赋值 函数，尽量定义为 `noexcept` 不抛出异常（编译器生成的版本会自动添加），否则 不能高效使用标准库和语言工具；
 
 
 
@@ -497,6 +497,7 @@ void main()
 原因：最简单的，通常也是最稳定最容易维护的。
 
 ```c++
+#include <iostream>
 #include <string>
 #include <map>
 
@@ -507,6 +508,13 @@ public:
 	{
 		this->name_ = name;
 		this->req_ = req;
+		std::cout << "Name : " << name << std::endl;
+		std::cout << "Value : ";
+		for (auto it = req.begin(); it != req.end(); it++)
+		{
+			std::cout << it->first << " " << it->second << " ";
+		}
+		std::cout << std::endl;
 	}
 
 private:
@@ -517,7 +525,154 @@ private:
 void main()
 {
 	libraryPersonInfo person;
-	person.assignment("lin", std::map<int, int>(5, 1));
+	std::string name = "lin";
+	std::map<int, int> req;
+	req[5] = 1;
+	person.assignment(name, req);
+}
+```
+
+成员变量 `name_` 和 `req_`  都是标准库类型，即使不定义`拷贝构造/拷贝赋值/移动构造/移动赋值/析构函数`的任何一个，这个类生成的默认函数就已经是最好的。
+
+
+
+#### 2.2.2 If you define or `=delete` any copy, move, or destruction function, define or `=delete` them all
+
+拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数，这三者是紧密联系的，如果声明或者删除(`=delete`)了其中一个，那么也要声明或者删除其余的。
+
+
+
+* 如果声明了 拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数中的任何一个，即使是`=delete`或者`=default`，那么编译器就会取消对移动构造/移动赋值函数的隐式声明，此时对象没有移动语义。
+* 如果声明了 移动构造/移动赋值函数，即使是`=delete`或者`=default`，那么编译器就会取消对 拷贝构造/拷贝赋值函数的隐式声明，此时对象没有拷贝语义。
+
+
+
+一旦声明了拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数中的任何一个，就要声明所有其他的，以免避免产生不必要的影响，例如将所有潜在的动作转换为更昂贵的副本，或者仅进行类移动。
+
+
+
+**注** ： 如果你想使用默认实现，用`=default`来表示你有意为此功能执行此操作。如果你不希望生成默认的构造函数/析构函数，那么用`=delete` 来禁止。
+
+**注**：拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数的形式：
+
+```c++
+class X
+{
+public:
+    virtual ~X();  // destructor
+    X(const X&);   // copy constructor
+    X& operator=(const X&);  // copy assignment
+    X(X&&);        // move constructor
+    X& operator=(const X&&);  // move assignment
+}
+```
+
+
+
+如果声明了拷贝构造函数，但没有声明移动构造/移动赋值函数，那么这个类将缺失移动语义，即使参数是右值，执行的也是拷贝：
+
+```c++
+#include <iostream>
+#include <memory>
+
+class Foo
+{
+public:
+	Foo() = default;
+	Foo(const Foo&) { std::cout << "Copy Constructor" << std::endl; };  // copy constructor
+};
+
+void main()
+{
+	Foo x;
+	Foo y(x);
+	Foo z(std::move(x));
+}
+
+/*  程序输出
+Copy Constructor
+Copy Constructor
+*/
+```
+
+**拷贝构造函数**满足对应的**移动构造函数**的要求：它会拷贝给定对象，并将原对象置于有效状态。
+
+
+
+如果声明了移动构造函数，但没有声明拷贝构造/拷贝赋值函数，那么这个类将缺失拷贝语义。无法用一个左值完成构造。
+
+```c++
+#include <iostream>
+#include <memory>
+
+class Foo
+{
+public:
+	Foo() = default;
+	Foo(Foo&&) { std::cout << "Move Constructor" << std::endl; };  // move constructor
+};
+
+void main()
+{
+	Foo x;
+	// Foo y(x);  // Foo(const Foo&) = delete; 无法引用已经删除的函数
+	Foo z(std::move(x));
+}
+
+/*  程序输出
+Move Constructor
+*/
+```
+
+
+
+#### 2.2.3 Use `=default` if you have to be explicit about using the default semantics
+
+**Reason** : The compiler is more likely to get the default semantics right and you can't implement these functions better than the compiler.
+
+编译器能够自动生成的默认函数，通常具有正确的拷贝/移动语义。如果拷贝/移动语义没有特殊的自定义要求，请使用`=default`。
+
+
+
+```c++
+#include <iostream>
+#include <string>
+
+// 因为写了析构函数，因此必须显式声明 拷贝构造/拷贝赋值，移动构造/移动赋值，=default 表示让编译器自动生成默认的
+class Tracer 
+{
+private:
+    std::string message;
+
+public:
+    Tracer(const std::string& m) : message{ m } { std::cerr << "entering " << message << '\n'; }
+    ~Tracer() { std::cerr << "exiting " << message << '\n'; }
+
+    Tracer(const Tracer&) = default;
+    Tracer& operator=(const Tracer&) = default;
+    Tracer(Tracer&&) = default;
+    Tracer& operator=(Tracer&&) = default;
+};
+
+// 写出复制和移动操作的主体是冗长，乏味且容易出错的, 编译器会做得更好。
+class BadTracer 
+{
+private:
+    std::string message;
+public:
+    BadTracer(const std::string& m) : message{ m } { std::cerr << "entering " << message << '\n'; }
+    ~BadTracer() { std::cerr << "exiting " << message << '\n'; }
+
+    BadTracer(const BadTracer& a) : message{ a.message } {}
+    BadTracer& operator=(const BadTracer& a) { message = a.message; return *this; }
+    BadTracer(BadTracer&& a) : message(a.message) {}
+    BadTracer& operator=(BadTracer&& a) { message = a.message; return *this; }
+};
+
+void main()
+{
+    Tracer gt("good tracer");
+    BadTracer bt("bad tracer");
 }
 ```
 
@@ -526,6 +681,23 @@ void main()
 #### 2.2.4 不抛出异常的移动构造函数和移动赋值运算符必须标记为 noexcept
 
 `noexcept` 是我们承诺一个函数不抛出异常的一种方法。
+
+
+
+例如：`std::vector` 使用 `std::move_if_noexcept()` 进行元素的转移操作：
+
+- 优先 使用 `noexcept` 移动构造函数（高效；不抛出异常）
+- 其次 使用 拷贝构造函数（低效；如果异常，可以回滚）
+- 再次 使用 非 `noexcept` 移动构造函数（高效；如果异常，**无法回滚**）
+- 最后 如果 不可拷贝、不可移动，**编译失败**
+
+
+
+如果没有定义移动构造函数或自定义的移动构造函数没有 `noexcept`，会导致 `std::vector` 扩容时执行无用的拷贝，**不易发现**。
+
+
+
+
 
 
 

@@ -4,17 +4,14 @@ template<class T>
 class strVec
 {
 public:
-	strVec() : data_(nullptr), size_(0) {};  // 默认构造函数
-	strVec(T* d) : data_(d), size_(0) {};
-	strVec(size_t s) : data_(nullptr), size_(s) {};
 	strVec(T* d, size_t s) : data_(d), size_(s) {};
 	strVec(const strVec& rhs);      // copy constructor
 	strVec(strVec&& rhs) noexcept;  // move constructor
 	~strVec();  // 析构函数
 
 private:
-	T* data_;
-	size_t size_;
+	T* data_ = nullptr;
+	size_t size_ = 0;
 };
 
 template<class T>
@@ -22,7 +19,7 @@ strVec<T>::strVec(const strVec& rhs)
 {
 	std::cout << "Call Copy Constructor" << std::endl;
 	data_ = new T(rhs.size_);
-	strVec<T> &lhs = *this;
+	strVec<T>& lhs = *this;
 	lhs.size_ = rhs.size_;
 	std::copy_n(rhs.data_, rhs.size_, lhs.data_);  // copy data
 }
@@ -42,7 +39,7 @@ template<class T>
 strVec<T>::~strVec()
 {
 	if (data_)  // 判断是否为空
-	{  
+	{
 		delete[] data_;
 	}
 }
