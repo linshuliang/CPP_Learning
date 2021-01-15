@@ -37,8 +37,21 @@
 
 * 左值引用 (`lvalue reference`) : 用 `&` 符号引用左值；
 * 右值引用(`rvalue reference`) ：用 `&&` 符号引用右值；
-
 * const引用 (`const reference`) ： 同时接受(左值/右值)进行初始化；
+
+
+
+**左值引用**： C++ 中左值引用的本质是一个指针常量，编译过程中使用 `const` 指针作为引用的内部实现。
+
+```c++
+int a;
+int* const p = &a;
+int &r = a;
+```
+
+`p`和 `r` 除了语法之外，实质上完全等价。
+
+
 
 ```c++
 // const reference demo
@@ -694,10 +707,6 @@ void main()
 
 
 如果没有定义移动构造函数或自定义的移动构造函数没有 `noexcept`，会导致 `std::vector` 扩容时执行无用的拷贝，**不易发现**。
-
-
-
-
 
 
 

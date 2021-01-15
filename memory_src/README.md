@@ -1248,7 +1248,7 @@ Destruct the allocator object.
 
 
 ```c++
-// 使用 allocate 来优化的内存分配和释放
+// 使用 allocate 来优化内存分配和释放
 #include <iostream>
 #include <memory>
 #include <string>
@@ -1278,4 +1278,108 @@ void main()
 	alloc.deallocate(p, n);
 }
 ```
+
+
+
+## 6 未初始化的内存
+
+### 6.1 拷贝和填充未初始化内存的算法
+
+| 函数                                          | 作用                                                         |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `uninitialized_copy(begin, end, destination)` | 将迭代器`begin`和`end`范围中的元素拷贝到迭代器`destination`所指定的未初始化的原始内存中。`destination` 指向的内存必须足够大，能容纳输入序列中元素的拷贝。 |
+| `uninitialized_copy_n(begin, n, destination)` | 从迭代器`begin` 指向的元素开始，拷贝`n`个元素到`destination`开始的内存中 |
+| `uninitialized_fill(begin, end, value)`       | 在迭代器`begin`和`end`指定的原始内存范围中创建对象，对象的值均为`value`的拷贝 |
+| `uninitialized_fill_n(begin, n, value)`       | 从迭代器`begin`指向的内存地址开始创建`n`个对象。`begin`必须指向足够大的未初始化的原始内存，能够容纳给定数量的对象。 |
+
+
+
+### 6.1.1 uninitialized_copy
+
+```c++
+template<class InputIterator, class ForwardIterator>
+ForwardIterator unintialized_copy(InputIterator first, InputIterator last, ForwardIterator result);
+```
+
+
+
+```c++
+// uninitialized demo
+#include <iostream>
+#include <utility>  // std::size()
+#include <memory>  // std::allocator, std::uninitialized_copy
+
+void main()
+{
+    const char* v[] = { "This", "is", "an", "example" };
+    auto v_size = std::size(v);
+    
+    std::allocator<std::string> str_alloc;
+    const int alloc_num = 10;
+    std::string* sptr = str_alloc.allocate(alloc_num);
+
+    std::uninitialized_copy(v, v + v_size, sptr);
+    
+    // 输出字符串
+    for (int i = 0; i < v_size; i++) std::cout << *(sptr + i) << std::endl;
+
+    // 将已赋值的对象执行析构
+    auto q = sptr + v_size;
+    while (q != sptr) str_alloc.destroy(--q);
+
+    // 当所有元素被销毁后，我们可以用 deallocate 来释放内存
+    str_alloc.deallocate(sptr, alloc_num);
+}
+```
+
+
+
+## 7 其他
+
+### 7.1.1 std::copy
+
+```c++
+template <class _InIt, class _OutIt>
+_OutIt copy(_InIt _First, _InIt _Last, _OutIt _Dest) { // copy [_First, _Last) to [_Dest, ...)
+	while(_First != _Last)
+    {
+        *_Dest = *_First;
+        _First++;
+        _Dest++;
+    }
+    return _Dest;
+}
+```
+
+作用： 将 `[_First, _Last)` 区间中的元素拷贝到以 `_Dest` 为起始位置的内存中。
+
+返回值: 若 `[_First, _Last)` 有 `n` 个元素，则返回值等于 `_Dest + n`。
+
+```c++
+// std::copy
+#include <iostream>     // std::cout
+#include <algorithm>    // std::copy
+#include <vector>       // std::vector
+
+void main() {
+    int myints[] = { 10,20,30,40,50,66,70 };
+    std::vector<int> myvector(7);
+
+    auto ret = std::copy(myints, myints + 7, myvector.begin());
+    std::cout << *(myvector.data() + 6) << std::endl;  // 70
+    std::cout << *(--ret) << std::endl;                // 70
+
+    std::cout << "myvector contains:";
+    for (std::vector<int>::iterator it = myvector.begin(); it != myvector.end(); ++it)
+        std::cout << ' ' << *it;
+
+    std::cout << '\n';
+}
+```
+
+
+
+## 8 参考
+
+
 

@@ -2,4 +2,5 @@
 # add_subdirectory(shared_ptr_demo)
 # add_subdirectory(weak_ptr_demo)
 # add_subdirectory(unique_ptr_demo)
-add_subdirectory(allocator_demo)
+# add_subdirectory(allocator_demo)
+add_subdirectory(uninitialized_memory)
