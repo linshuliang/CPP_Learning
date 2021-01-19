@@ -1,4 +1,7 @@
-add_executable(UNINITIALIZED_COPY_DEMO "unintialized_copy_demo.cpp")
+add_executable(UNINITIALIZED_COPY_DEMO "uninitialized_copy_demo.cpp")
+add_executable(UNINITIALIZED_COPY_N_DEMO "uninitialized_copy_n_demo.cpp")
+add_executable(UNINITIALIZED_FILL_DEMO "uninitialized_fill_demo.cpp")
 add_executable(STD_COPY_DEMO "STD_COPY_DEMO.cpp")
+add_executable(STD_COPY_N_DEMO "STD_COPY_N_DEMO.cpp")
 add_executable(REFERENCE_ARR "ref_arr_demo.cpp")
 add_executable(CONST_REF_RETURN_DEMO "const_ref_return.cpp")

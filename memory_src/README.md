@@ -1294,20 +1294,22 @@ void main()
 
 
 
-### 6.1.1 uninitialized_copy
+#### 6.1.1 std::uninitialized_copy
 
 ```c++
 template<class InputIterator, class ForwardIterator>
-ForwardIterator unintialized_copy(InputIterator first, InputIterator last, ForwardIterator result);
+ForwardIterator unintialized_copy(InputIterator _First, InputIterator _Last, ForwardIterator _Dest);
 ```
 
+作用： 将 `[_First, _Last)` 区间中的元素以构造的形式在 `_Dest` 为起始位置的内存中初始化。
 
+返回值: 若 `[_First, _Last)` 有 `n` 个元素，则返回值等于 `_Dest + n`。
 
 ```c++
 // uninitialized demo
 #include <iostream>
 #include <utility>  // std::size()
-#include <memory>  // std::allocator, std::uninitialized_copy
+#include <memory>   // std::allocator, std::uninitialized_copy
 
 void main()
 {
@@ -1334,9 +1336,90 @@ void main()
 
 
 
+#### 6.1.2 std::uninitialized_copy_n
+
+```c++
+template<class InputIterator, class Size, class ForwardIterator>
+ForwardIterator uninitialized_copy_n(InputIterator _First, Size _N, ForwardIterator _Dest);
+```
+
+作用：将以`_First`开头的`_N`个元素，在以`_Dest`为起始位置的内存中构造初始化。
+
+返回值： `_Dest + _N`
+
+```c++
+// uninitialized demo
+#include <iostream>
+#include <utility>  // std::size()
+#include <memory>   // std::allocator, std::uninitialized_copy
+
+void main()
+{
+    const char* v[] = { "This", "is", "an", "example" };
+    auto v_size = std::size(v);
+
+    std::allocator<std::string> str_alloc;
+    const int alloc_num = 10;
+    std::string* sptr = str_alloc.allocate(alloc_num);
+
+    std::uninitialized_copy_n(v, v_size, sptr);
+
+    // 输出字符串
+    for (int i = 0; i < v_size; i++) std::cout << *(sptr + i) << std::endl;
+
+    // 将已赋值的对象执行析构
+    auto q = sptr + v_size;
+    while (q != sptr) str_alloc.destroy(--q);
+
+    // 当所有元素被销毁后，我们可以用 deallocate 来释放内存
+    str_alloc.deallocate(sptr, alloc_num);
+}
+```
+
+
+
+#### 6.1.3 std::uninitialized_fill
+
+```c++
+template<class ForwardIterator, class T>
+void uninitialized_fill(ForwardIterator _First, ForwardIterator _Last, const T& val);
+```
+
+作用：将`[First, last)` 中的内存空间用`val` 去构造初始化。
+
+
+
+```c++
+#include <iostream>
+#include <memory>  // std::allocator, std::uninitialized_copy
+
+void main()
+{
+    std::allocator<std::string> str_alloc;
+    const int alloc_num = 10;
+    std::string* sptr = str_alloc.allocate(alloc_num);
+
+    std::uninitialized_fill(sptr, sptr+ alloc_num, "Hi");
+
+    // 输出字符串
+    for (int i = 0; i < alloc_num; i++) std::cout << *(sptr + i) << std::endl;
+
+    // 将已赋值的对象执行析构
+    auto q = sptr + alloc_num;
+    while (q != sptr) str_alloc.destroy(--q);
+
+    // 当所有元素被销毁后，我们可以用 deallocate 来释放内存
+    str_alloc.deallocate(sptr, alloc_num);
+}
+```
+
+
+
 ## 7 其他
 
-### 7.1.1 std::copy
+## 7.1 <algorithm> 库中的初始化算法
+
+#### 7.1.1 std::copy
 
 ```c++
 template <class _InIt, class _OutIt>
@@ -1379,7 +1462,64 @@ void main() {
 
 
 
-## 8 参考
+#### 7.1.2 std::copy_n
+
+```c++
+template<class InputIterator, class Size, class OutputIterator>
+OutputIterator copy_n(InputIterator _First, Size _N, OutputIterator _Dest)
+{
+    while(_N > 0)
+    {
+        *_Dest = *_First;
+        _Dest++;
+        _First++;
+        _N--;
+    }
+    return _Dest;
+}
+```
+
+作用： 将以 `_First` 开头的`_N`个元素拷贝到以 `_Dest` 为起始位置的内存中。
+
+返回值: `_Dest + n`
+
+```c++
+// std::copy_n
+#include <iostream>     // std::cout
+#include <algorithm>    // std::copy
+#include <vector>       // std::vector
+
+void main() 
+{
+    int myints[] = { 10,20,30,40,50,66,70 };
+    std::vector<int> myvector(7);
+
+    auto ret = std::copy_n(myints, 7, myvector.begin());
+    std::cout << *(myvector.data() + 6) << std::endl;  // 70
+    std::cout << *(--ret) << std::endl;                // 70
+
+    std::cout << "myvector contains:";
+    for (std::vector<int>::iterator it = myvector.begin(); it != myvector.end(); ++it)
+        std::cout << ' ' << *it;
+
+    std::cout << '\n';
+}
+```
 
 
 
+#### 7.1.3 std::fill
+
+```c++
+template<class ForwardIterator, class T>
+void fill(ForwardIterator _First, ForwardIterator _Last, cont T& val)
+{
+    while(_First != _Last)
+    {
+        *_First = val;
+        _First++;
+    }
+}
+```
+
+作用：将`[_First, last)` 中指定的内存区间，用 `val` 去填充。

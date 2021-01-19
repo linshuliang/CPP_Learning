@@ -1,0 +1,5 @@
+add_executable(LAMBDA_DEMO_1 "lambda_demo_1.cpp")
+add_executable(VALUE_CAPTURE_DEMO "value_capture.cpp")
+add_executable(REF_CAPTURE_DEMO "ref_capture.cpp")
+add_executable(IMPLICIT_CAPTURE_DEMO "implicit_capture.cpp")
+add_executable(MIXED_CAPTURE_DEMO "mixed_capture.cpp")
