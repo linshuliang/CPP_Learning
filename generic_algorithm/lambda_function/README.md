@@ -146,7 +146,7 @@ void main()
 
 ### 2.4 混合使用隐式捕获和显式捕获
 
-可以 混合使用隐式捕获和显式捕获。
+可以混合使用隐式捕获和显式捕获。
 
 ```c++
 #include <iostream>
@@ -220,7 +220,145 @@ void main()
 
 
 
+### 3.2 类成员函数调用运算符可替换lambda表达式
+
+当函数功能比较简易时，使用 lambda 可能优于函数对象设计。但是，如果你认为该功能在将来可能需要重大拓展，则使用函数对象设计，这样更易维护。
+
+```c++
+#include <algorithm>  // std::for_each
+#include <iostream>
+#include <vector>
+
+class FunctorClass
+{
+public:
+	FunctorClass(int& e) : m_evenCount(e) {}
+
+	void operator()(int n)
+	{
+		std::cout << n;
+		std::cout << (n % 2 == 0 ? " is even" : " is odd") << std::endl;
+		m_evenCount = (n % 2 == 0) ? m_evenCount + 1 : m_evenCount;
+	}
+
+private:
+	int& m_evenCount;
+};
+
+void main()
+{
+	std::vector<int> v;
+	for (int i = 1; i < 10; i++) v.push_back(i);
+	int evenCount = 0;
+	std::for_each(v.begin(), v.end(), FunctorClass(evenCount));
+	std::cout << "Even Count : " << evenCount << std::endl;
+}
+```
+
+
+
 ## 4 补充知识
+
+### 4.1 重载 operator() 
+
+#### 4.1.1 强制类型转换运算符: operator 类型名()
+
+在 C++ 中，类型的名字本身也是一种运算符，即类型转换运算符。
+
+类型强制转换运算符是单目运算符，也可以被重载，但只能重载为成员函数，不能重载为全局函数。
+
+`(类型名)对象` 这个强制类型转换的表达式就等价于 `对象.operator 类型名()`，即变成对运算符函数的调用。
+
+```c++
+#include <cmath>
+#include <iostream>
+
+class Complex
+{
+private:
+	double real, image;
+
+public:
+	Complex(double r, double i) : real(r), image(i) {};
+	operator double() { return std::sqrt(std::pow(real, 2) + std::pow(image, 2)); }
+};
+
+void main()
+{
+	Complex c(1.2, 3.5);
+	std::cout << (double)c << std::endl;            // (double)c 等同于  c.operator double()
+	std::cout << c.operator double() << std::endl;
+}
+```
+
+
+
+#### 4.1.2 函数调用运算符
+
+函数对象是实现了`operator()` 的类。`operator()` 也称为函数调用运算符，C++标准库经常使用函数对象作为容器和算法的排序条件。
+
+函数对象有两个优势：
+
+* 函数对象可包含状态
+* 函数对象是一个 `class` 的实例，因此可用模板参数。
+
+```c++
+#include <iostream>
+
+class Distance
+{
+private:
+	int x;
+	int y;
+
+public:
+	Distance();
+	Distance(int, int);
+	Distance operator()(int a, int b, int c);  // 重载函数调用运算符
+	void displayDistance();
+};
+
+Distance::Distance()
+{
+	x = 0; 
+	y = 0;
+}
+
+Distance::Distance(int i, int j)
+{
+	x = i;
+	y = j;
+}
+
+Distance Distance::operator()(int a, int b, int c)
+{
+	Distance d;
+	d.x = a + c + 10;
+	d.y = a + b + 100;
+	return d;
+}
+
+void Distance::displayDistance()
+{
+	std::cout << "X: " << x << ", Y: " << y << std::endl;
+}
+
+void main()
+{
+	Distance D1(10, 20);
+	std::cout << "Distance 1 : ";
+	D1.displayDistance();
+
+	// 函数运算符重载
+	Distance D2 = D1(10, 20, 30);
+	std::cout << "Distance 2 : ";
+	D2.displayDistance();
+}
+```
+
+
+
+
 
 
 
