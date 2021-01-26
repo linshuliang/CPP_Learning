@@ -1,0 +1,2 @@
+add_executable(ARRAY_INTERSECTION "array_intersection.cpp")
+add_executable(ARRAY_INTERSECTION_HASH "array_intersection_hash.cpp")
