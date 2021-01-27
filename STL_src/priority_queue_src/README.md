@@ -4,8 +4,6 @@
 
 `std::priority_queue` 对应数据结构中的堆。
 
-
-
 ```c++
 template<class _Ty, class _Container = vector<_Ty>, class _Pr = less<typename _Container::value_type> >
 class priority_queue;
@@ -16,13 +14,6 @@ class priority_queue;
 * 第一个参数是存储对象的类型；
 * 第二个参数是存储元素的底层容器；
 * 第三个参数是函数对象。默认是 `std::less<_Container::value_type>`，也即大根堆。当设为 `std::greater<_Container::value_type>`时即为小根堆。
-
-
-
-priority_queue 数据排列和检索示意图：
-
-![priority_queue 数据排列和检索](priority_queue.jpg)
-
 
 
 `std::priority_queue`可以使用其他容器来保存元素，只要容器支持随机访问迭代器，并有成员函数 ：
@@ -39,12 +30,14 @@ priority_queue 数据排列和检索示意图：
 
 显然，`std::deque` 也能作为 `std::priority_queue` 的存储容器。
 
- 
-
-`std::priority_queue` 的成员函数：
+### 1.1 `std::priority_queue` 的成员函数：
 
 ![](priority_queue_member_functions.png)
 
+
+priority_queue 数据排列和检索示意图：
+
+![priority_queue 数据排列和检索](priority_queue.jpg)
 
 
 ## 2 Demo
