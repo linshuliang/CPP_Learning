@@ -11,6 +11,6 @@ unsigned short Hash(void* p)
 void main() 
 {
 	int a[20];
-	for (int i = 0; i < 20; i++)
-		std::cout << Hash(a + i) << std::endl;
+	for (int i = 0; i < 20; i++) std::cout << Hash(a + i) << std::endl;
+	system("pause");
 }

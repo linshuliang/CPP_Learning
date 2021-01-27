@@ -1,0 +1,3 @@
+add_executable(CONSTRUCTOR_RANGE_DEMO "constructor_range_demo.cpp")
+add_executable(CONSTRUCTOR_INIT_DEMO "constructor_init_demo.cpp")
+add_executable(STORAGE_CONTAINER_DEMO "storage_container_demo.cpp")

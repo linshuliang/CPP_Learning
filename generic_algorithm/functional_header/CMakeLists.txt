@@ -1,0 +1,1 @@
+add_executable(LESS_DEMO "less_demo.cpp")

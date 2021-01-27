@@ -229,6 +229,20 @@ void main()
 #include <iostream>
 #include <vector>
 
+/*
+template <class _InIt, class _Fn>
+_Fn for_each(_InIt _First, _InIt _Last, _Fn _Func) { // perform function for each element [_First, _Last)
+    _Adl_verify_range(_First, _Last);
+    auto _UFirst = _Get_unwrapped(_First);
+    const auto _ULast = _Get_unwrapped(_Last);
+    for (; _UFirst != _ULast; ++_UFirst) {
+        _Func(*_UFirst);
+    }
+
+    return _Func;
+}
+*/
+
 class FunctorClass
 {
 public:

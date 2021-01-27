@@ -1,0 +1,1 @@
+add_executable(STD_BEGIN_DEMO "std_begin.cpp")

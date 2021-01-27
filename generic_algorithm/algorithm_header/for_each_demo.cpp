@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <vector>
 
-
 /*
 template <class _InIt, class _Fn>
 _Fn for_each(_InIt _First, _InIt _Last, _Fn _Func) { // perform function for each element [_First, _Last)
@@ -30,4 +29,5 @@ void main()
     });
 
     std::cout << "There are " << evenCount << " even numbers in the vector" << std::endl;
+	system("pause");
 }
