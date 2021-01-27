@@ -21,7 +21,7 @@ class priority_queue;
 
 priority_queue 数据排列和检索示意图：
 
-![priority_queue 数据排列和检索](.\priority_queue.jpg)
+![priority_queue 数据排列和检索](priority_queue.jpg)
 
 
 
@@ -43,7 +43,7 @@ priority_queue 数据排列和检索示意图：
 
 `std::priority_queue` 的成员函数：
 
-![](.\priority_queue_member_functions.png)
+![](priority_queue_member_functions.png)
 
 
 
