@@ -1,4 +1,3 @@
-add_subdirectory(RAII)
 add_subdirectory(reference)
 add_subdirectory(conversion_operator)
 add_subdirectory(preprocessor)

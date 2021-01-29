@@ -1,0 +1,1 @@
+add_executable(INLINE_DEMO "inline_demo.cpp")

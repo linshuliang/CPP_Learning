@@ -1,20 +1,18 @@
-﻿// std::priority_queue 可选择 std::vector 之外的类作为存储容器，比如 std::deque
-#include <iostream>
-#include <queue>
-#include <deque>
-#include <string>
+﻿// Demo - std::less
+#include <iostream>     // std::cout
+#include <functional>   // std::less, std::greater
+#include <algorithm>    // std::sort
 
 void main()
 {
-	std::string words[] = { "one", "three", "five" };
-	std::priority_queue<std::string, std::deque<std::string>> pq(std::begin(words), std::end(words));
-	pq.emplace("six");
+	int foo[] = { 10,20,5,15,25 };
+	int bar[] = { 15,10,20 };
+	std::sort(foo, foo + 5, std::less<int>());     // 5 10 15 20 25
+	std::sort(bar, bar + 3, std::greater<int>());  // 20 15 10
 
-	while (!pq.empty())
-	{
-		std::cout << pq.top() << "  ";
-		pq.pop();
-	}
+	for (auto &x : foo) std::cout << x << "  ";
+	std::cout << std::endl;
+	for (auto &y : bar) std::cout << y << "  ";
 	std::cout << std::endl;
 	system("pause");
 }

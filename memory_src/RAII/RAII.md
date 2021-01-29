@@ -11,7 +11,7 @@ public:
  	explicit Buffer(size_t size) 
     {
         mem_ = malloc(size);
-    }     
+    }
  	
  	~Buffer() 
     {
@@ -186,15 +186,15 @@ public:
     AutoTimer() : beg_(std::chrono::high_resolution_clock::now()) {} 	 	
     ~AutoTimer()  	
     { 		
-        auto end = std::chrono::high_resolution_clock::now(); 		
-        auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - beg_); 		
+        auto end = std::chrono::high_resolution_clock::now();
+        auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - beg_);
         std::cout << dur.count() << " musec\n";
-    } 	
+    }
 private: 	
-    std::chrono::time_point<std::chrono::high_resolution_clock> beg_; 
+    std::chrono::time_point<std::chrono::high_resolution_clock> beg_;
 }; 
 
-int main() 
+void main() 
 { 
     { 	
         AutoTimer timer; 	
@@ -204,8 +204,7 @@ int main()
     { 	
         AutoTimer timer; 	
         bar(); 
-    } 	
-    return 0; 
+    }
 }
 ```
 

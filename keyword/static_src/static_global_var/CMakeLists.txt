@@ -1,0 +1,1 @@
+add_executable(static_global_var_demo "file1.cpp" "file2.cpp")

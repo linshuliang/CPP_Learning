@@ -1,0 +1,1 @@
+add_executable(BINARY_SEARCH "binary_search.cpp")

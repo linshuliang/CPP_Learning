@@ -1,18 +1,21 @@
-# C++ 内存空间
+# C++ 内存管理标准库
 
-**C++ 的内存空间分为三种**：
+在C++中，内存分成5个区，他们分别是堆、栈、自由存储区、全局/静态存储区和常量存储区。
 
-* 静态内存
-* 栈内存
-* 自由空间`(free storage)` 或堆`(heap)`
+* 栈：在执行函数时，函数内局部变量的存储单元都可以在栈上创建，函数执行结束时这些存储单元自动被释放。栈内存分配运算内置于处理器的指令集中，效率很高，但是分配的内存容量有限。
+* 堆：就是那些由 `new`分配的内存块，他们的释放编译器不去管，由我们的应用程序去控制，一般一个`new`就要对应一个 `delete`。如果程序员没有释放掉，那么在程序结束后，操作系统会自动回收。
+* 自由存储区：就是那些由 `malloc` 分配的内存块，用 `free` 来释放。
+* 全局/静态存储区：全局变量和静态变量被分配到同一块内存中。
+* 常量存储区 ：这是一块比较特殊的存储区，里面存放的是常量，不允许修改。
 
 
 
 **内存空间与变量类型的对应关系**：
 
-* 静态内存用来保存局部`static`对象，类`static`数据成员，以及定义在任何函数之外的变量；
+* 静态内存用来保存局部`static`对象，类`static`数据成员，以及全局变量；
 * 栈内存用来保存定义在函数内的非`static`对象；
-* 程序用堆来存储动态分配（`dynamically allocate`) 的对象；
+* 程序用堆来存储动态分配的对象；
+* 常量被放在常量存储区中；
 
 
 
@@ -37,7 +40,7 @@ c++11 引入了智能指针。智能指针的行为类似常规指针，重要�
 
 * `shared_ptr` : 允许多个指针指向同一个对象；
 * `unique_ptr` : 独占所指向的对象；
-* `weak_ptr`     : 一种弱引用，指向`shared_ptr`所管理的对象。
+* `weak_ptr`     : 一种弱引用，指向 `shared_ptr` 所管理的对象。
 
 
 
@@ -1215,10 +1218,6 @@ allocator() noexcept;
 
 // copy constructor
 allocator(const allocator& alloc) noexcept;
-
-// copy constructor
-template<class U>
-allocator(const allocator<T>& alloc) noexcept;
 ```
 
 The `std::allocator` has no data members, it is not required to perform any initialization.
@@ -1241,7 +1240,7 @@ Destruct the allocator object.
 | ---------------------- | ------------------------------------------------------------ |
 | `allocator<T> a`       | 定义一个名为 `a` 的 `allocator`对象，它可以为类型为`T`的对象分配内存。 |
 | `a.allocate(n)`        | 分配一段原始的，未构造的内存，可保存`n`个类型为`T`的对象。   |
-| `a.deallocate(p, n)`   | 释放从`T*`指针`p`中地址开始的内存，这块内存中保存了`n`个类型为`T`的对象。`p`必须时一个先前由`allocate（）`函数返回的指针，且`n`必须是`p`创建时所要求的大小。在调用`deallocate`之前，用户必须对每个在这块内存中创建的对象调用`destroy`。 |
+| `a.deallocate(p, n) `  | 释放从`T*`指针`p`中地址开始的内存，这块内存中保存了`n`个类型为`T`的对象。`p`必须时一个先前由`allocate（）`函数返回的指针，且`n`必须是`p`创建时所要求的大小。在调用`deallocate`之前，用户必须对每个在这块内存中创建的对象调用`destroy`。 |
 | `a.construct(p, args)` | `p` 必须是一个类型为`T`的指针，指向一块原始内存：`args` 被传递给类型为`T`的构造函数，用来在`p`指向的内存中构造一个对象。 |
 | `a.destroy(p)`         | `p` 为`T*` 类型的指针，此算法对 `p` 指向的对象执行析构函数。 |
 
@@ -1285,12 +1284,12 @@ void main()
 
 ### 6.1 拷贝和填充未初始化内存的算法
 
-| 函数                                          | 作用                                                         |
-| --------------------------------------------- | ------------------------------------------------------------ |
-| `uninitialized_copy(begin, end, destination)` | 将迭代器`begin`和`end`范围中的元素拷贝到迭代器`destination`所指定的未初始化的原始内存中。`destination` 指向的内存必须足够大，能容纳输入序列中元素的拷贝。 |
-| `uninitialized_copy_n(begin, n, destination)` | 从迭代器`begin` 指向的元素开始，拷贝`n`个元素到`destination`开始的内存中 |
-| `uninitialized_fill(begin, end, value)`       | 在迭代器`begin`和`end`指定的原始内存范围中创建对象，对象的值均为`value`的拷贝 |
-| `uninitialized_fill_n(begin, n, value)`       | 从迭代器`begin`指向的内存地址开始创建`n`个对象。`begin`必须指向足够大的未初始化的原始内存，能够容纳给定数量的对象。 |
+| 函数                                           | 作用                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| `uninitialized_copy(begin, end, destination)`  | 将迭代器`begin`和`end`范围中的元素拷贝到迭代器`destination`所指定的未初始化的原始内存中。`destination` 指向的内存必须足够大，能容纳输入序列中元素的拷贝。 |
+| `uninitialized_copy_n(begin,  n, destination)` | 从迭代器`begin` 指向的元素开始，拷贝`n`个元素到`destination`开始的内存中 |
+| `uninitialized_fill(begin, end, value)`        | 在迭代器`begin`和`end`指定的原始内存范围中创建对象，对象的值均为`value`的拷贝 |
+| `uninitialized_fill_n(begin, n, value)`        | 从迭代器`begin`指向的内存地址开始创建`n`个对象。`begin`必须指向足够大的未初始化的原始内存，能够容纳给定数量的对象。 |
 
 
 
@@ -1398,7 +1397,6 @@ void main()
     std::allocator<std::string> str_alloc;
     const int alloc_num = 10;
     std::string* sptr = str_alloc.allocate(alloc_num);
-
     std::uninitialized_fill(sptr, sptr+ alloc_num, "Hi");
 
     // 输出字符串

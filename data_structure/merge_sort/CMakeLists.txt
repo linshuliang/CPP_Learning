@@ -1,0 +1,1 @@
+add_executable(MERGE_SORT_DEMO "merge_sort.cpp")
