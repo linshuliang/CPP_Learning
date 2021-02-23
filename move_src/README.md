@@ -7,11 +7,11 @@
 值(value) 和 变量 (variable) 是两个独立的概念：
 
 * 值只有类别(category) 的划分，变量只有类型(type) 的划分；
-* 值不一定拥有身份(identity)，也不一定拥有变量名（例如 表达式中间结果 `i + j + k`）;
+* 值不一定拥有身份(identity)，也不一定拥有变量名（例如表达式中间结果 `i + j + k`）;
 
 
 
-值类别 (value category) 可以分为两种：
+值类别 (`value category`) 可以分为两种：
 
 * 左值(`lvalue, left value`) 是能被取地址、不能被移动的值；
 * 右值(`rvalue, right value`) 是字面常量/表达式中间结果，可能有变量名，也可能没有；
@@ -74,7 +74,7 @@ private:
 void func(const Data& d)
 {
 	// d.Print();  // ERROR : 对象含有与成员函数不兼容的限定符，对象类型是 const Data
-	d.Display();  // d 是 const 类型变量，它只能调用 const 函数
+	d.Display();   // d 是 const 类型变量，它只能调用 const 函数
 	Data a = d;
 	a.Print();
 }
@@ -297,7 +297,7 @@ void main()
 
 [C.64: A move operation should move and leave its source in a valid state](https://link.zhihu.com/?target=https%3A//isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines%23Rc-move-semantic)
 
-很多人认为：被移动的值会进入一个**非法状态** *(invalid state)*，对应的 **内存不能再访问**。
+很多人认为：被移动的值会进入一个**非法状态** *(invalid state)*，对应的**内存不能再访问**。
 
 其实，C++ 标准要求对象遵守移动语义，被移动的对象进入一个**合法但未指定状态** (valid but unspecified state)，调用该对象的方法（包括析构函数）不会出现异常，甚至在重新赋值后可以继续使用。
 
@@ -418,9 +418,9 @@ void main()
 
 ## 2 移动语义
 
-在 C++ 11强化了左右值概念后，提出了**移动语义** *(move semantic)* 优化：由于右值对象一般是临时对象，在移动时，对象包含的资源 **不需要先拷贝再删除**，只需要直接**从旧对象移动到新对象**。
+在 C++ 11强化了左右值概念后，提出了**移动语义** *(move semantic)* 优化：由于右值对象一般是临时对象，在移动时，对象包含的资源**不需要先拷贝再删除**，只需要直接**从旧对象移动到新对象**。
 
-同时，要求**被移动的对象** 处于 **合法但未指定状态**（参考1.3.1 被移动的值不能再使用]）：
+同时，要求**被移动的对象**处于**合法但未指定状态**（参考1.3.1 被移动的值不能再使用]）：
 
 - （基本要求）能正确析构（不会重复释放已经被移动了的资源，例如 `std::unique_ptr::~unique_ptr()` 检查指针是否需要 `delete`）
 - （一般要求）重新赋值后，和新的对象没有差别（C++ 标准库基于这个假设）
@@ -553,8 +553,6 @@ void main()
 
 拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数，这三者是紧密联系的，如果声明或者删除(`=delete`)了其中一个，那么也要声明或者删除其余的。
 
-
-
 * 如果声明了 拷贝构造/拷贝赋值，移动构造/移动赋值，析构函数中的任何一个，即使是`=delete`或者`=default`，那么编译器就会取消对移动构造/移动赋值函数的隐式声明，此时对象没有移动语义。
 * 如果声明了 移动构造/移动赋值函数，即使是`=delete`或者`=default`，那么编译器就会取消对 拷贝构造/拷贝赋值函数的隐式声明，此时对象没有拷贝语义。
 
@@ -574,7 +572,7 @@ class X
 public:
     virtual ~X();  // destructor
     X(const X&);   // copy constructor
-    X& operator=(const X&);  // copy assignment
+    X& operator=(const X&);   // copy assignment
     X(X&&);        // move constructor
     X& operator=(const X&&);  // move assignment
 }
@@ -622,7 +620,7 @@ class Foo
 {
 public:
 	Foo() = default;
-	Foo(Foo&&) { std::cout << "Move Constructor" << std::endl; };  // move constructor
+	Foo(Foo&&) { std::cout << "Move Constructor" << std::endl; };  // move constructor 
 };
 
 void main()
@@ -643,7 +641,7 @@ Move Constructor
 
 **Reason** : The compiler is more likely to get the default semantics right and you can't implement these functions better than the compiler.
 
-编译器能够自动生成的默认函数，通常具有正确的拷贝/移动语义。如果拷贝/移动语义没有特殊的自定义要求，请使用`=default`。
+编译器自动生成的默认函数，通常具有正确的拷贝/移动语义。如果拷贝/移动语义没有特殊的自定义要求，请使用`=default`。
 
 
 
@@ -699,10 +697,10 @@ void main()
 
 例如：`std::vector` 使用 `std::move_if_noexcept()` 进行元素的转移操作：
 
-- 优先 使用 `noexcept` 移动构造函数（高效；不抛出异常）
-- 其次 使用 拷贝构造函数（低效；如果异常，可以回滚）
-- 再次 使用 非 `noexcept` 移动构造函数（高效；如果异常，**无法回滚**）
-- 最后 如果 不可拷贝、不可移动，**编译失败**
+- 优先使用`noexcept` 移动构造函数（高效；不抛出异常）
+- 其次使用拷贝构造函数（低效；如果异常，可以回滚）
+- 再次使用非 `noexcept` 移动构造函数（高效；如果异常，**无法回滚**）
+- 最后 如果不可拷贝、不可移动，**编译失败**
 
 
 

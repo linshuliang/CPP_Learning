@@ -8,6 +8,16 @@
 * 全局/静态存储区：全局变量和静态变量被分配到同一块内存中。
 * 常量存储区 ：这是一块比较特殊的存储区，里面存放的是常量，不允许修改。
 
+![](.\memory_address.jpg)
+
+从Code Segment到Stack的内存地址均位于用户空间中，其地址空间由低到高。其中：
+
+- Code Segment(代码段或Text Segment)中存放着程序的机器码和只读数据，可执行指令就是从这里取得的。如果可能，系统会安排相同程序的多个运行实体共享这些实例代码。这个段在内存中一般被标记为只读，任何对该区的写操作都会导致段错误（Segmentation Fault）。
+- Data Segment 中存放已初始化的全局或静态变量。
+- BSS 中存放未初始化的全局或静态变量。
+- Heap(堆)，堆的大小并不固定，可动态扩张或缩减。其分配由`malloc()`、`new()`等这类实时内存分配函数来实现(brk函数也是从这里分配内存)。
+- Stack(栈)，用来存储函数调用时的临时信息，如函数调用所传递的参数、函数的返回地址、函数的局部变量等。 在程序运行时由编译器在需要的时候分配，在不需要的时候自动清除。栈内存的申请和释放遵循LIFO(先进后出)。
+
 
 
 **内存空间与变量类型的对应关系**：
@@ -763,7 +773,7 @@ constexpr unique_ptr() noexcept;
 explicit unique_ptr(pointer p) noexcept;
 
 // move constructor（移动构造函数）
-// 当前unique_ptr获取x管理的内容，x的引用计数变为0，当前unique_ptr的引用计数变为1。
+// 当前 unique_ptr 获取x管理的内容，x的引用计数变为0，当前 unique_ptr 的引用计数变为1。
 unique_ptr(unique_ptr&& x) noexcept;
 
 // copy constructor (禁止拷贝)
