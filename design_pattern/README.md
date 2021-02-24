@@ -62,7 +62,7 @@
 
 
 
-![示例1：Windows 的桌面主题类](.\OCP_example.png)
+![示例1：Windows 的桌面主题类](./OCP_example.png)
 
 <center> 
 示例图1：Windows 的桌面主题类
