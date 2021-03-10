@@ -1,2 +1,5 @@
-add_subdirectory(vector_src)
-add_subdirectory(priority_queue_src)
+# add_subdirectory(vector_src)
+# add_subdirectory(priority_queue_src)
+# add_subdirectory(seq_stack)
+# add_subdirectory(map_src)
+add_subdirectory(heap_src)

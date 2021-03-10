@@ -1,0 +1,1 @@
+add_executable(PRIVATE_CONSTRUCTOR_DEMO "private_constructor_demo.cpp")

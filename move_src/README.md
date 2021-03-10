@@ -35,8 +35,8 @@
 
 引用类型可以分为：
 
-* 左值引用 (`lvalue reference`) : 用 `&` 符号引用左值；
-* 右值引用(`rvalue reference`) ：用 `&&` 符号引用右值；
+* 左值引用  (`lvalue reference`) : 用 `&` 符号引用左值；
+* 右值引用  (`rvalue reference`) ：用 `&&` 符号引用右值；
 * const引用 (`const reference`) ： 同时接受(左值/右值)进行初始化；
 
 

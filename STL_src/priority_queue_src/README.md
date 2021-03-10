@@ -81,7 +81,7 @@ void main()
 	}
 	std::cout << std::endl;
 
-	std::priority_queue<std::string, std::vector<std::string>, std::greater<std::string> > reverse_ps(std::begin(words), std::end(words));
+	std::priority_queue<std::string, std::vector<std::string>, std::greater<std::string>> reverse_ps(std::begin(words), std::end(words));
 	std::cout << "由小至大" << std::endl;
 	while (!reverse_ps.empty())
 	{
