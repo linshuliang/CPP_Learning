@@ -1,0 +1,2 @@
+add_subdirectory(extern_global)
+add_subdirectory(static_global)

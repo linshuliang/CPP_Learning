@@ -1,0 +1,1 @@
+add_executable(AVOID_DUPLICATE_DEFINITION "global_demo.h" "global_demo.cpp" "main.cpp")

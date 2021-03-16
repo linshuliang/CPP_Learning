@@ -1,4 +1,0 @@
-add_subdirectory(reference)
-add_subdirectory(conversion_operator)
-add_subdirectory(preprocessor)
-add_subdirectory(func_pointer)

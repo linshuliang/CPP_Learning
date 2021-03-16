@@ -1,0 +1,1 @@
+add_executable(STATIC_GLOBAL_DEMO "static_global.h" "static_global.cpp" "main.cpp")
